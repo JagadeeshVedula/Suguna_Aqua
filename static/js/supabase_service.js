@@ -29,7 +29,7 @@ const SupabaseService = {
     async getDashboardMetrics() {
         try {
             const today = new Date().toISOString().split('T')[0];
-            
+
             // 1. Opening Balance
             const { data: dashData } = await _supabase
                 .from('DASHBOARD')
@@ -40,7 +40,7 @@ const SupabaseService = {
 
             let metrics = {
                 OPENING_BALANCE: 0,
-                OPENING_DETAILS: {"250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0},
+                OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 },
                 CASH_OPENING: 0
             };
 
@@ -59,7 +59,7 @@ const SupabaseService = {
                 .select('*')
                 .gte('DATE', today + " 00:00:00");
 
-            let prodDetails = {"250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0};
+            let prodDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             let prodTotal = 0;
             if (prodData) {
                 prodData.forEach(row => {
@@ -74,8 +74,8 @@ const SupabaseService = {
             // 3. Sales
             const { data: lineCashData } = await _supabase.from('CASH').select('*').neq('VEHICLE_NO', 'DEALER_SALE').gte('DATE', today + ' 00:00:00');
             const { data: dealerSalesData } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', today + ' 00:00:00');
-            
-            let salesDetails = {"250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0};
+
+            let salesDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             let salesTotal = 0;
             const allSales = [...(lineCashData || []), ...(dealerSalesData || [])];
             allSales.forEach(row => {
@@ -111,7 +111,7 @@ const SupabaseService = {
             };
         } catch (e) {
             console.error("METRICS ERROR:", e);
-            const v = {"250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0};
+            const v = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             return {
                 OPENING_BALANCE: 0, OPENING_DETAILS: v,
                 PRODUCTION: 0, PROD_DETAILS: v,
@@ -217,38 +217,55 @@ const SupabaseService = {
     // --- REPORTS ---
     async getReportData(type, timeframe, dealerOrHead) {
         let start = new Date();
-        if (timeframe === 'daily') start.setHours(0,0,0,0);
+        if (timeframe === 'daily') start.setHours(0, 0, 0, 0);
         else if (timeframe === 'weekly') start.setDate(start.getDate() - 7);
         else if (timeframe === 'monthly') start.setDate(start.getDate() - 30);
         else if (timeframe === 'yearly') start.setDate(start.getDate() - 365);
-        
+
         const startStr = start.toISOString().split('T')[0] + " 00:00:00";
 
         if (type === "Production") {
-            const { data } = await _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').gte('DATE', startStr).order('DATE', {ascending: false});
+            const { data } = await _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').gte('DATE', startStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Sales") {
-            const { data } = await _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, PAID_BY_CUSTOMER, EXPENSES, CASH_RECEIVED, DUE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').neq('VEHICLE_NO', 'DEALER_PAYMENT').gte('DATE', startStr).order('DATE', {ascending: false});
+            const { data } = await _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, PAID_BY_CUSTOMER, EXPENSES, CASH_RECEIVED, DUE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').neq('VEHICLE_NO', 'DEALER_PAYMENT').gte('DATE', startStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Account Ledger") {
             let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT, TO_BE_PAID').gte('DATE', startStr);
             if (dealerOrHead && dealerOrHead !== "All Heads") q = q.eq('HEAD_NAME', dealerOrHead);
-            const { data } = await q.order('DATE', {ascending: false});
+            const { data } = await q.order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Dealer Sales") {
-            let q = _supabase.from('SALES').select('DATE, DRIVER, ROUTE, QUANTITY, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').eq('TYPE', 'DEALER').gte('DATE', startStr);
+            const { data: dealers } = await _supabase.from('DEALERS').select('*');
+            let q = _supabase.from('SALES').select('id, DATE, DRIVER, ROUTE, QUANTITY, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').eq('TYPE', 'DEALER').gte('DATE', startStr);
             if (dealerOrHead && dealerOrHead !== "All Dealers") q = q.eq('DRIVER', dealerOrHead);
-            const { data } = await q.order('DATE', {ascending: false});
-            
-            // Re-hydrate dealer payment status for report
+            const { data } = await q.order('DATE', { ascending: false });
+
             if (data) {
                 for (let d of data) {
-                    const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', d.id?.toString());
-                    d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0);
-                    d.PENDING = (parseFloat(d.TOTAL_AMOUNT || 0) - d.PAID_AMOUNT).toFixed(2);
+                    const dl = dealers.find(x => x.NAME === d.DRIVER) || {};
+                    let bill = 0;
+                    ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                        bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0));
+                    });
+                    d.BILL_AMOUNT = bill.toFixed(2);
+
+                    const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', d.id.toString());
+                    d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0).toFixed(2);
+                    d.PENDING = (bill - d.PAID_AMOUNT).toFixed(2);
+                    delete d.id;
                 }
             }
             return data || [];
+        } else if (type === "Stock") {
+            // Get the Dashboard's "Current Available Pool" math
+            const metrics = await this.getDashboardMetrics();
+            const row = {
+                DATE: new Date().toISOString().split('T')[0],
+                ...metrics.STOCK_DETAILS,
+                CASH_ON_HAND: metrics.CASH_ON_HAND
+            };
+            return [row];
         }
         return [];
     },
