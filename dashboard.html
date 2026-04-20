@@ -90,6 +90,7 @@
                 <form id="salesDispatchForm">
                     <div class="line-form-grid">
                         <div class="form-input-group"><label>Vehicle No</label><select name="VEHICLE_NO" id="vehicleSelect" required></select></div>
+                        <div class="form-input-group"><label>Select Route</label><select name="ROUTE" id="routeSelect" required></select></div>
                         <div class="form-input-group"><label>Driver Name</label><input type="text" name="DRIVER" placeholder="Full Name" required></div>
                         <div class="form-input-group"><label>Driver Mobile</label><input type="tel" name="MOBILE" placeholder="Mobile Number" required></div>
                         <div class="form-input-group"><label>Aadhar Number</label><input type="text" name="ADHAR" placeholder="12-digit Number" required></div>
@@ -854,16 +855,13 @@
 
             document.getElementById('vehicleSelect').innerHTML = vehs.map(v=>`<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
             
-            // Per-Product Route Generation
-            const routeOpts = '<option value="">--No Route--</option>' + routes.map(r=>`<option value="${r.ROUTE}">${r.ROUTE}</option>`).join('');
+            document.getElementById('routeSelect').innerHTML = '<option value="">--Select Route--</option>' + routes.map(r=>`<option value="${r.ROUTE}">${r.ROUTE}</option>`).join('');
+            
             const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
             document.getElementById('dispatchProductContainer').innerHTML = products.map(k => `
-                <div class="input-tile" style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="font-size: 0.8rem; opacity: 0.7; color: white;">${k}</label>
+                <div class="input-tile">
+                    <label>${k}</label>
                     <input type="number" name="${k}" value="0">
-                    <select name="ROUTE_${k}" class="product-route-select" style="font-size: 0.75rem; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
-                        ${routeOpts}
-                    </select>
                 </div>
             `).join('');
 
@@ -886,32 +884,29 @@
             document.getElementById('salesDispatchForm').onsubmit = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const baseData = Object.fromEntries(fd);
+                const data = Object.fromEntries(fd);
                 const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
-                const entries = [];
                 
+                let totalQty = 0;
                 products.forEach(k => {
-                    const qty = parseInt(baseData[k] || 0);
-                    const route = baseData[`ROUTE_${k}`];
-                    if (qty > 0 && route) {
-                        const entry = {
-                            VEHICLE_NO: baseData.VEHICLE_NO, DRIVER: baseData.DRIVER, MOBILE: baseData.MOBILE,
-                            ROUTE: route, QUANTITY: qty, TYPE: "LINE",
-                            "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0
-                        };
-                        entry[k] = qty;
-                        entries.push(entry);
-                    }
+                    const qty = parseInt(data[k] || 0);
+                    totalQty += qty;
                 });
 
-                if (entries.length === 0) { alert("Please enter quantities and select routes."); return; }
+                if (totalQty === 0) { alert("Please enter quantities."); return; }
+                if (!data.ROUTE) { alert("Please select a route."); return; }
 
-                let successCount = 0;
-                for (const entry of entries) {
-                    const res = await SupabaseService.saveSales(entry);
-                    if (res.success) successCount++;
+                data.QUANTITY = totalQty;
+                data.TYPE = "LINE";
+                
+                const res = await SupabaseService.saveSales(data);
+                if (res.success) { 
+                    alert("Dispatch Recorded Successfully!"); 
+                    e.target.reset(); 
+                    refreshDashboard(); 
+                } else {
+                    alert("Error: " + res.error.message);
                 }
-                if (successCount > 0) { alert(`Recorded ${successCount} dispatches.`); e.target.reset(); refreshDashboard(); }
             };
 
             document.getElementById('dealerDispatchForm').onsubmit = async (e) => {
