@@ -2,129 +2,80 @@
 const SUPABASE_URL = "https://mggcskkkricnmkjqdqai.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nZ2Nza2trcmljbm1ranFkcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNjk4MjQsImV4cCI6MjA3ODc0NTgyNH0.Z74XcwusKBcVr82QWU5UxKBRgwyAILwKXiVgyTg5SaQ";
 
-// Initialize Supabase Client with the specific schema
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     db: { schema: 'suguna_aqua' }
 });
 
 const SupabaseService = {
-    // --- AUTHENTICATION ---
     async verifyUser(username, password) {
         try {
-            const { data, error } = await _supabase
-                .from('CRED')
-                .select('*')
-                .eq('USERNAME', username)
-                .eq('PASSWORD', password)
-                .single();
-
+            const { data, error } = await _supabase.from('CRED').select('*').eq('USERNAME', username).eq('PASSWORD', password).single();
             if (error || !data) return { success: false, message: "Invalid Credentials" };
             return { success: true, user: data };
-        } catch (e) {
-            return { success: false, message: e.message };
-        }
+        } catch (e) { return { success: false, message: e.message }; }
     },
 
-    // --- DASHBOARD METRICS ---
     async getDashboardMetrics() {
         try {
             const today = new Date().toISOString().split('T')[0];
-
-            // 1. Opening Balance
-            const { data: dashData } = await _supabase
-                .from('DASHBOARD')
-                .select('*')
-                .order('DATE', { ascending: false })
-                .order('id', { ascending: false })
-                .limit(1);
-
-            let metrics = {
-                OPENING_BALANCE: 0,
-                OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 },
-                CASH_OPENING: 0
-            };
-
+            const { data: dashData } = await _supabase.from('DASHBOARD').select('*').order('DATE', { ascending: false }).order('id', { ascending: false }).limit(1);
+            let metrics = { OPENING_BALANCE: 0, OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 }, CASH_OPENING: 0 };
             if (dashData && dashData.length > 0) {
                 const row = dashData[0];
                 metrics.OPENING_BALANCE = parseInt(row.OPENING_BALANCE || 0);
                 metrics.CASH_OPENING = parseFloat(row.CASH_ON_HAND || 0);
-                Object.keys(metrics.OPENING_DETAILS).forEach(k => {
-                    metrics.OPENING_DETAILS[k] = parseInt(row[k] || 0);
-                });
+                Object.keys(metrics.OPENING_DETAILS).forEach(k => { metrics.OPENING_DETAILS[k] = parseInt(row[k] || 0); });
             }
 
-            // 2. Production
-            const { data: prodData } = await _supabase
-                .from('PRODUCTION')
-                .select('*')
-                .gte('DATE', today + " 00:00:00");
-
+            const { data: prodData } = await _supabase.from('PRODUCTION').select('*').gte('DATE', today + " 00:00:00");
             let prodDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             let prodTotal = 0;
             if (prodData) {
                 prodData.forEach(row => {
                     Object.keys(prodDetails).forEach(k => {
                         let val = parseInt(row[k] || 0);
-                        prodDetails[k] += val;
-                        prodTotal += val;
+                        prodDetails[k] += val; prodTotal += val;
                     });
                 });
             }
 
-            // 3. Sales
             const { data: lineCashData } = await _supabase.from('CASH').select('*').neq('VEHICLE_NO', 'DEALER_SALE').gte('DATE', today + ' 00:00:00');
             const { data: dealerSalesData } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', today + ' 00:00:00');
-
             let salesDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             let salesTotal = 0;
-            const allSales = [...(lineCashData || []), ...(dealerSalesData || [])];
-            allSales.forEach(row => {
+            [...(lineCashData || []), ...(dealerSalesData || [])].forEach(row => {
                 Object.keys(salesDetails).forEach(k => {
                     let val = parseInt(row[k] || 0);
-                    salesDetails[k] += val;
-                    salesTotal += val;
+                    salesDetails[k] += val; salesTotal += val;
                 });
             });
 
-            // 4. Cash Collections
             const { data: cashRecs } = await _supabase.from('CASH').select('CASH_RECEIVED').gte('DATE', today + ' 00:00:00');
             let todayCash = (cashRecs || []).reduce((acc, row) => acc + parseFloat(row.CASH_RECEIVED || 0), 0);
-
-            // 5. Final Stock
-            let stockDetails = {};
-            Object.keys(prodDetails).forEach(k => {
-                stockDetails[k] = metrics.OPENING_DETAILS[k] + prodDetails[k] - salesDetails[k];
-            });
-            let stockTotal = metrics.OPENING_BALANCE + prodTotal - salesTotal;
-
-            // 6. Ledger
+            
             const { data: ledgerData } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('CREDIT, DEBIT').gte('DATE', today + ' 00:00:00');
             let ledgerCredit = (ledgerData || []).reduce((acc, row) => acc + parseFloat(row.CREDIT || 0), 0);
             let ledgerDebit = (ledgerData || []).reduce((acc, row) => acc + parseFloat(row.DEBIT || 0), 0);
+
+            let stockDetails = {};
+            Object.keys(prodDetails).forEach(k => { stockDetails[k] = metrics.OPENING_DETAILS[k] + prodDetails[k] - salesDetails[k]; });
 
             return {
                 OPENING_BALANCE: metrics.OPENING_BALANCE, OPENING_DETAILS: metrics.OPENING_DETAILS,
                 PRODUCTION: prodTotal, PROD_DETAILS: prodDetails,
                 SALES: salesTotal, SALES_DETAILS: salesDetails,
-                STOCK: stockTotal, STOCK_DETAILS: stockDetails,
+                STOCK: metrics.OPENING_BALANCE + prodTotal - salesTotal, STOCK_DETAILS: stockDetails,
                 CASH_ON_HAND: metrics.CASH_OPENING + todayCash + ledgerCredit - ledgerDebit
             };
         } catch (e) {
-            console.error("METRICS ERROR:", e);
-            const v = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
-            return {
-                OPENING_BALANCE: 0, OPENING_DETAILS: v,
-                PRODUCTION: 0, PROD_DETAILS: v,
-                SALES: 0, SALES_DETAILS: v,
-                STOCK: 0, STOCK_DETAILS: v,
-                CASH_ON_HAND: 0
-            };
+            console.error("METRICS ERROR", e);
+            const v = { "250ML":0,"500ML":0,"1LTR":0,"2LTR":0,"5LTR":0,"20LTR":0,"BAGS":0 };
+            return { OPENING_BALANCE: 0, OPENING_DETAILS: v, PRODUCTION: 0, PROD_DETAILS: v, SALES: 0, SALES_DETAILS: v, STOCK: 0, STOCK_DETAILS: v, CASH_ON_HAND: 0 };
         }
     },
 
-    // --- DATA SAVING ---
     async saveProduction(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' '); // YYYY-MM-DD HH:MM:SS
+        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
         return await _supabase.from('PRODUCTION').insert([data]);
     },
 
@@ -135,137 +86,132 @@ const SupabaseService = {
     },
 
     async saveCashEntry(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
-        return await _supabase.from('CASH').insert([data]);
-    },
-
-    // --- LIST FETCHING ---
-    async getVehicles() {
-        const { data } = await _supabase.from('VEHICLES').select('VEHICLE_NO');
-        return data || [];
-    },
-
-    async getRoutes() {
-        const { data } = await _supabase.from('ROUTES').select('ROUTE');
-        return data || [];
-    },
-
-    async addRoute(routeName) {
-        return await _supabase.from('ROUTES').insert([{ ROUTE: routeName }]);
-    },
-
-    async getTodaysDispatches() {
-        const today = new Date().toISOString().split('T')[0];
-        const { data: settled } = await _supabase.from('CASH').select('SALES_ID');
-        const settledIds = (settled || []).map(item => item.SALES_ID).filter(id => id);
-
-        let query = _supabase.from('SALES')
-            .select('*')
-            .eq('TYPE', 'LINE')
-            .gte('DATE', today + ' 00:00:00');
-
-        if (settledIds.length > 0) {
-            query = query.not('id', 'in', `(${settledIds.join(',')})`);
-        }
-
-        const { data } = await query.order('DATE', { ascending: false });
-        return data || [];
+        const payload = {
+            DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' '),
+            VEHICLE_NO: data.VEHICLE_NO || data.vehicle_no,
+            DRIVER: data.DRIVER || data.driver,
+            TOTAL_AMOUNT: parseFloat(data.total_amount || 0),
+            PAID_BY_CUSTOMER: parseFloat(data.paid_by_customer || 0),
+            EXPENSES: parseFloat(data.expenses || 0),
+            CASH_RECEIVED: parseFloat(data.cash_received || 0),
+            SALES_ID: String(data.SALES_ID),
+            "250ML": parseInt(data["250ML"] || data["250ml"] || 0),
+            "500ML": parseInt(data["500ML"] || data["500ml"] || 0),
+            "1LTR": parseInt(data["1LTR"] || data["1ltr"] || 0),
+            "2LTR": parseInt(data["2LTR"] || data["2ltr"] || 0), 
+            "5LTR": parseInt(data["5LTR"] || data["5ltr"] || 0),
+            "20LTR": parseInt(data["20LTR"] || data["20ltr"] || 0),
+            "BAGS": parseInt(data["BAGS"] || data["bags"] || 0)
+        };
+        payload.DUE = Math.max(0, (payload.PAID_BY_CUSTOMER - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
+        return await _supabase.from('CASH').insert([payload]);
     },
 
     async getDriverDues() {
-        const { data } = await _supabase.from('CASH').select('DRIVER, DUE');
-        let dues = {};
-        if (data) {
-            data.forEach(row => {
-                const driver = row.DRIVER;
-                const due = parseFloat(row.DUE || 0);
-                dues[driver] = (dues[driver] || 0) + due;
-            });
+        try {
+            // Fetch everything and filter in JS to avoid string/number comparison errors in Postgres
+            const { data, error } = await _supabase.from('CASH').select('*');
+            if (error) throw error;
+            return (data || [])
+                .filter(row => parseFloat(row.DUE || 0) > 0)
+                .map(row => ({
+                    ...row,
+                    DRIVER_DUE: parseFloat(row.DUE || 0)
+                }));
+        } catch(e) { 
+            console.error("GET DUES ERR", e);
+            throw e; // Throw so UI can catch and report
         }
-        return dues;
     },
 
-    // --- DEALERS ---
-    async getDealers() {
-        const { data } = await _supabase.from('DEALERS').select('*').order('NAME');
-        return data || [];
+    async payDriverDue(id, amount) {
+        try {
+            const { data: current } = await _supabase.from('CASH').select('DUE').eq('id', id).single();
+            const newDue = Math.max(0, parseFloat(current.DUE || 0) - amount);
+            const { error } = await _supabase.from('CASH').update({ DUE: newDue.toFixed(2) }).eq('id', id);
+            return { success: !error, error };
+        } catch (e) { return { error: e }; }
     },
 
-    async addDealer(data) {
-        return await _supabase.from('DEALERS').insert([data]);
+    async getVehicles() { const { data } = await _supabase.from('VEHICLES').select('VEHICLE_NO'); return data || []; },
+    async getRoutes() { const { data } = await _supabase.from('ROUTES').select('ROUTE'); return data || []; },
+    async addRoute(name) { return await _supabase.from('ROUTES').insert([{ ROUTE: name }]); },
+
+    async getTodaysDispatches() {
+        const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 7);
+        const dateStr = dateLimit.toISOString().split('T')[0] + ' 00:00:00';
+        const { data: settled } = await _supabase.from('CASH').select('SALES_ID');
+        const settledIds = (settled || []).map(item => String(item.SALES_ID)).filter(id => id);
+        const { data: sales } = await _supabase.from('SALES').select('*').eq('TYPE', 'LINE').gte('DATE', dateStr).order('DATE', { ascending: false });
+        return (sales || []).filter(d => !settledIds.includes(String(d.id)));
     },
 
-    async updateDealerPrices(name, prices) {
-        return await _supabase.from('DEALERS').update(prices).eq('NAME', name);
-    },
+    async getDealers() { const { data } = await _supabase.from('DEALERS').select('*').order('NAME'); return data || []; },
+    async addDealer(data) { return await _supabase.from('DEALERS').insert([data]); },
+    async updateDealerPrices(name, prices) { return await _supabase.from('DEALERS').update(prices).eq('NAME', name); },
 
-    // --- LEDGER ---
-    async getAccountHeads() {
-        const { data } = await _supabase.from('ACCOUNT_HEADS').select('*').order('NAME');
-        return data || [];
-    },
-
-    async addAccountHead(name) {
-        return await _supabase.from('ACCOUNT_HEADS').insert([{ NAME: name }]);
-    },
-
+    async getAccountHeads() { const { data } = await _supabase.from('ACCOUNT_HEADS').select('*').order('NAME'); return data || []; },
+    async addAccountHead(name) { return await _supabase.from('ACCOUNT_HEADS').insert([{ NAME: name }]); },
     async saveAccountTransaction(data) {
         data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
         return await _supabase.from('ACCOUNT_TRANSACTIONS').insert([data]);
     },
 
-    // --- REPORTS ---
-    async getReportData(type, timeframe, dealerOrHead) {
+    async getReportData(type, timeframe, filter, specificDate) {
         let start = new Date();
         if (timeframe === 'daily') start.setHours(0, 0, 0, 0);
         else if (timeframe === 'weekly') start.setDate(start.getDate() - 7);
         else if (timeframe === 'monthly') start.setDate(start.getDate() - 30);
-        else if (timeframe === 'yearly') start.setDate(start.getDate() - 365);
-
         const startStr = start.toISOString().split('T')[0] + " 00:00:00";
 
+        if (type === "All Transactions") {
+            const date = specificDate || new Date().toISOString().split('T')[0];
+            const pattern = `${date}%`;
+            
+            const [cash, prod, ledger] = await Promise.all([
+                _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
+                _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
+                _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT').ilike('DATE', pattern)
+            ]);
+
+            let all = [];
+            const prods = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+
+            (cash.data || []).forEach(r => {
+                let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: `${r.VEHICLE_NO} - ${r.DRIVER}` };
+                prods.forEach(k => row[k] = r[k] || 0);
+                row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.CASH_RECEIVED; row.DUE = r.DUE;
+                all.push(row);
+            });
+
+            (prod.data || []).forEach(r => {
+                let row = { DATE: r.DATE, TYPE: 'PROD', DESCRIPTION: 'Production Entry' };
+                prods.forEach(k => row[k] = r[k] || 0);
+                row.AMOUNT = 0; row.PAID = 0; row.DUE = 0;
+                all.push(row);
+            });
+
+            (ledger.data || []).forEach(r => {
+                let row = { DATE: r.DATE, TYPE: 'LEDG', DESCRIPTION: `${r.HEAD_NAME}: ${r.PURPOSE}` };
+                prods.forEach(k => row[k] = 0);
+                row.AMOUNT = r.DEBIT; row.PAID = r.CREDIT; row.DUE = 0;
+                all.push(row);
+            });
+
+            return all.sort((a, b) => new Date(a.DATE) - new Date(b.DATE));
+        }
+
         if (type === "Production") {
-            const { data } = await _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').gte('DATE', startStr).order('DATE', { ascending: false });
+            const { data } = await _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Sales") {
-            const { data } = await _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, PAID_BY_CUSTOMER, EXPENSES, CASH_RECEIVED, DUE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').neq('VEHICLE_NO', 'DEALER_PAYMENT').gte('DATE', startStr).order('DATE', { ascending: false });
+            const { data } = await _supabase.from('CASH').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Account Ledger") {
-            let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT, TO_BE_PAID').gte('DATE', startStr);
-            if (dealerOrHead && dealerOrHead !== "All Heads") q = q.eq('HEAD_NAME', dealerOrHead);
+            let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('*').gte('DATE', startStr);
+            if (filter && filter !== "All Heads") q = q.eq('HEAD_NAME', filter);
             const { data } = await q.order('DATE', { ascending: false });
             return data || [];
-        } else if (type === "Dealer Sales") {
-            const { data: dealers } = await _supabase.from('DEALERS').select('*');
-            let q = _supabase.from('SALES').select('id, DATE, DRIVER, ROUTE, QUANTITY, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').eq('TYPE', 'DEALER').gte('DATE', startStr);
-            if (dealerOrHead && dealerOrHead !== "All Dealers") q = q.eq('DRIVER', dealerOrHead);
-            const { data } = await q.order('DATE', { ascending: false });
-
-            if (data) {
-                for (let d of data) {
-                    const dl = dealers.find(x => x.NAME === d.DRIVER) || {};
-                    let bill = 0;
-                    ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
-                        bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0));
-                    });
-                    d.BILL_AMOUNT = bill.toFixed(2);
-
-                    const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', d.id.toString());
-                    d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0).toFixed(2);
-                    d.PENDING = (bill - d.PAID_AMOUNT).toFixed(2);
-                    delete d.id;
-                }
-            }
-            return data || [];
-        } else if (type === "Stock") {
-            // Get the Dashboard's "Current Available Pool" math
-            const metrics = await this.getDashboardMetrics();
-            const row = {
-                DATE: new Date().toISOString().split('T')[0],
-                ...metrics.STOCK_DETAILS,
-                CASH_ON_HAND: metrics.CASH_ON_HAND
-            };
-            return [row];
         }
         return [];
     },
@@ -274,46 +220,28 @@ const SupabaseService = {
         const { data: sales } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').ilike('DATE', `${date}%`).order('DATE', { ascending: false });
         const { data: dealers } = await _supabase.from('DEALERS').select('*');
         if (!sales) return [];
-
         for (let d of sales) {
             const dl = dealers.find(x => x.NAME === d.DRIVER) || {};
             let bill = 0;
-            ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
-                bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0));
-            });
+            ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => { bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0)); });
             d.TOTAL_AMOUNT = bill;
-
-            const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', d.id.toString());
+            const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', String(d.id));
             d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0);
         }
         return sales;
     },
 
     async updateDealerPayment(sales_id, dealer_name, total_amount, amount_paid) {
-        const data = {
-            VEHICLE_NO: "DEALER_PAYMENT",
-            DRIVER: dealer_name,
-            TOTAL_AMOUNT: total_amount,
-            PAID_BY_CUSTOMER: amount_paid,
-            EXPENSES: 0,
-            CASH_RECEIVED: amount_paid,
-            DUE: 0,
-            SALES_ID: sales_id,
-            "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0
-        };
+        const data = { VEHICLE_NO: "DEALER_PAYMENT", DRIVER: dealer_name, TOTAL_AMOUNT: total_amount, PAID_BY_CUSTOMER: amount_paid, EXPENSES: 0, CASH_RECEIVED: amount_paid, SALES_ID: String(sales_id) };
         return await this.saveCashEntry(data);
     },
 
     exportToCSV(data, filename) {
         if (!data || !data.length) return;
-        const headers = Object.keys(data[0]).join(',');
-        const rows = data.map(row => Object.values(row).join(',')).join('\n');
-        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
-        const encodedUri = encodeURI(csvContent);
+        const csv = [Object.keys(data[0]).join(','), ...data.map(row => Object.values(row).join(','))].join('\n');
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", filename + ".csv");
-        document.body.appendChild(link);
+        link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+        link.download = filename + ".csv";
         link.click();
     }
 };

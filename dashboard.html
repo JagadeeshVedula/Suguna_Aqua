@@ -251,6 +251,7 @@
                     <h2 style="font-size: 2.2rem; color: var(--accent);">Account Ledger</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="add-btn active" onclick="toggleLedgerSub('ledger-transactions', this)">Transactions</button>
+                        <button class="add-btn" onclick="toggleLedgerSub('driver-dues', this); fetchDriverDues();">Driver Dues</button>
                         <button class="add-btn" onclick="toggleLedgerSub('add-head', this)">Add Head</button>
                     </div>
                 </div>
@@ -275,6 +276,30 @@
                         <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Create Head</button>
                     </form>
                 </div>
+
+                <div id="driver-dues" style="display: none; margin-top: 2.5rem;">
+                    <div class="glass-panel">
+                        <h3 style="color: white; margin-bottom: 2rem;">Pending Collections from Drivers</h3>
+                        <div class="report-table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Driver</th>
+                                        <th>Vehicle</th>
+                                        <th>Bill Amount</th>
+                                        <th>Actually Collected</th>
+                                        <th style="color: var(--accent);">Due Balance</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="driverDuesContent">
+                                    <tr><td colspan="7" style="text-align:center; padding:3rem; opacity:0.5;">Calculating dues...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -293,12 +318,17 @@
                     <div class="control-group">
                         <label>Report Type</label>
                         <select id="reportType" class="report-select" onchange="toggleReportFilters(this)">
+                            <option value="All Transactions">All Transactions (Daily Statement)</option>
                             <option value="Production">Production Report</option>
                             <option value="Sales">Line Sales Report</option>
                             <option value="Dealer Sales">Dealer Sales Report</option>
                             <option value="Account Ledger">Account Ledger Report</option>
                             <option value="Stock">Stock Report</option>
                         </select>
+                    </div>
+                    <div class="control-group" id="dateFilterGroup">
+                        <label>Select Date</label>
+                        <input type="date" id="reportDate" class="report-select" style="min-width: 150px;">
                     </div>
                     <div class="control-group" id="dealerFilterGroup" style="display: none;">
                         <label>Dealer</label>
@@ -308,7 +338,7 @@
                         <label>Account Head</label>
                         <select id="reportLedgerHead" class="report-select"></select>
                     </div>
-                    <div class="control-group">
+                    <div class="control-group" id="timeframeFilterGroup">
                         <label>Timeframe</label>
                         <select id="reportTimeframe" class="report-select">
                             <option value="daily">Daily</option>
@@ -406,14 +436,86 @@
         function toggleLedgerSub(id, btn) {
             document.getElementById('ledger-transactions').style.display = (id === 'ledger-transactions') ? 'block' : 'none';
             document.getElementById('add-head').style.display = (id === 'add-head') ? 'block' : 'none';
+            document.getElementById('driver-dues').style.display = (id === 'driver-dues') ? 'block' : 'none';
             document.querySelectorAll('#ledger .add-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
+        async function fetchDriverDues() {
+            try {
+                const results = await SupabaseService.getDriverDues();
+                const content = document.getElementById('driverDuesContent');
+                if(!content) return;
+                
+                // Clear state
+                if(!results || !results.length) { 
+                    content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; opacity: 0.5;">No pending dues found.</td></tr>'; 
+                    return; 
+                }
+
+                content.innerHTML = results.map(d => {
+                    const dateVal = (d.DATE && typeof d.DATE === 'string') ? d.DATE.split(' ')[0] : 'N/A';
+                    const bill = parseFloat(d.TOTAL_AMOUNT || 0);
+                    const paid = parseFloat(d.PAID_BY_CUSTOMER || 0);
+                    const due = parseFloat(d.DRIVER_DUE || d.DUE || 0);
+                    
+                    return `
+                        <tr>
+                            <td>${dateVal}</td>
+                            <td style="font-weight:700;">${d.DRIVER || 'Unknown'}</td>
+                            <td>${d.VEHICLE_NO || 'N/A'}</td>
+                            <td>₹${bill.toFixed(2)}</td>
+                            <td>₹${paid.toFixed(2)}</td>
+                            <td style="color:var(--accent); font-weight:700;">₹${due.toFixed(2)}</td>
+                            <td>
+                                <div style="display: flex; gap: 5px; align-items: center; justify-content: center;">
+                                    <input type="number" id="pay_due_${d.id}" value="${due.toFixed(2)}" step="0.01" 
+                                        style="width: 100px; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px;">
+                                    <button onclick="payDriverDue('${d.id}', ${due})" class="add-mini-btn" style="background: var(--accent); color: #000; height: 35px; min-width: 60px;">
+                                        Pay
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Dashboard Dues UI Error:", err);
+                const content = document.getElementById('driverDuesContent');
+                if(content) content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#ff595e;">Sync Error. Please Refresh Page.</td></tr>';
+            }
+        }
+
+        async function payDriverDue(id, maxAmt) {
+            const input = document.getElementById(`pay_due_${id}`);
+            const amt = parseFloat(input.value || 0);
+            
+            if(amt <= 0) { alert("Please enter a valid amount."); return; }
+            if(amt > maxAmt + 0.01) { alert("Payment cannot exceed total due amount."); return; }
+
+            if(confirm(`Confirm payment of ₹${amt.toFixed(2)} for this due?`)) {
+                const res = await SupabaseService.payDriverDue(id, amt);
+                if(!res.error) {
+                    alert("Payment Recorded Successfully!");
+                    fetchDriverDues();
+                    refreshDashboard();
+                } else {
+                    alert("Error recording payment: " + res.error.message);
+                }
+            }
+        }
+
+        // Bulletproof Local Tracking for Instant Removal
+        window.locally_settled = window.locally_settled || [];
+
         // Feature Restoration: Line Settlement
         async function loadSettlements() {
             try {
-                const dispatches = await SupabaseService.getTodaysDispatches();
+                let dispatches = await SupabaseService.getTodaysDispatches();
+                
+                // CRITICAL: Filter out locally settled IDs immediately
+                dispatches = dispatches.filter(d => !window.locally_settled.includes(String(d.id)));
+
                 const container = document.getElementById('lineSettlementContainer');
                 if (!dispatches || !dispatches.length) {
                     container.innerHTML = "<div style='text-align:center; padding: 5rem; opacity: 0.3;'><i class='fas fa-check-circle' style='font-size: 3rem; margin-bottom: 1rem;'></i><br>All trips settled.</div>";
@@ -602,7 +704,24 @@
 
             data.SALES_ID = id; data.VEHICLE_NO = vno; data.DRIVER = driver;
             const res = await SupabaseService.saveCashEntry(data);
-            alert("Settlement Successful!"); loadSettlements(); refreshDashboard();
+            
+            if (!res.error) {
+                // FORCE REMOVE FROM SCREEN IMMEDIATELY
+                window.locally_settled.push(String(id));
+                const card = e.target.closest('.glass-panel');
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.95)';
+                    setTimeout(() => card.remove(), 300);
+                }
+
+                alert("Settlement Successful!");
+                loadSettlements();
+                refreshDashboard();
+            } else {
+                alert("Error: " + res.error.message);
+            }
         }
 
         // Dealer Support Functions
@@ -691,24 +810,33 @@
 
         // Report Logic Restoration
         function toggleReportFilters(sel) {
-            document.getElementById('dealerFilterGroup').style.display = (sel.value === 'Dealer Sales') ? 'inline-block' : 'none';
-            document.getElementById('ledgerFilterGroup').style.display = (sel.value === 'Account Ledger') ? 'inline-block' : 'none';
+            const type = sel.value;
+            document.getElementById('dateFilterGroup').style.display = (type === 'All Transactions') ? 'inline-block' : 'none';
+            document.getElementById('timeframeFilterGroup').style.display = (type !== 'All Transactions' && type !== 'Stock') ? 'inline-block' : 'none';
+            document.getElementById('dealerFilterGroup').style.display = (type === 'Dealer Sales') ? 'inline-block' : 'none';
+            document.getElementById('ledgerFilterGroup').style.display = (type === 'Account Ledger') ? 'inline-block' : 'none';
         }
 
         async function generateReport() {
             const type = document.getElementById('reportType').value;
             const timeframe = document.getElementById('reportTimeframe').value;
+            const specificDate = document.getElementById('reportDate').value;
             const target = (type === 'Dealer Sales') ? document.getElementById('reportDealer').value : document.getElementById('reportLedgerHead').value;
+            
             const tableHeader = document.getElementById('reportHeader');
             const tableBody = document.getElementById('reportContent');
 
-            const data = await SupabaseService.getReportData(type, timeframe, target);
-            if(!data.length) { tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records.</td></tr>'; return; }
+            const data = await SupabaseService.getReportData(type, timeframe, target, specificDate);
+            window.currentReport = data;
+            
+            if(!data || !data.length) { 
+                tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records found.</td></tr>'; 
+                return; 
+            }
 
             const keys = Object.keys(data[0]);
-            tableHeader.innerHTML = `<tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr>`;
+            tableHeader.innerHTML = `<tr>${keys.map(k=>`<th>${k.replace(/_/g,' ')}</th>`).join('')}</tr>`;
             tableBody.innerHTML = data.map(r=>`<tr>${keys.map(k=>`<td>${r[k]??''}</td>`).join('')}</tr>`).join('');
-            window.currentReport = data;
         }
 
         function exportCSV() {
