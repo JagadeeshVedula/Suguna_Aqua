@@ -68,21 +68,27 @@ def get_dashboard_metrics():
         today_cash = sum(float(row.get('CASH_RECEIVED') or 0) for row in (cash_recs.data or []))
         
         # 4. Calculate Final Stock (Itemized & Total)
-        # Stock = Opening + Production - (Verified Sales + Returns)
-        # Note: Since Stock is Opening + Prod - Sales, and here Sales are only settled ones.
-        # This matches the user's logic where dashboard shows what is actually sold.
         stock_details = {}
         for key in prod_details.keys():
             stock_details[key] = opening_details[key] + prod_details[key] - sales_details[key]
-        
         stock_total = opening_total + prod_total - sales_total
         
+        # 5. Account Ledger Transactions (Today's) - Resilient to missing table
+        ledger_credit = 0
+        ledger_debit = 0
+        try:
+            ledger_resp = supabase.postgrest.schema("suguna_aqua").table("ACCOUNT_TRANSACTIONS").select("CREDIT, DEBIT").gte("DATE", today + " 00:00:00").execute()
+            ledger_credit = sum(float(row.get('CREDIT') or 0) for row in (ledger_resp.data or []))
+            ledger_debit = sum(float(row.get('DEBIT') or 0) for row in (ledger_resp.data or []))
+        except:
+            pass
+
         return {
             "OPENING_BALANCE": opening_total, "OPENING_DETAILS": opening_details,
             "PRODUCTION": prod_total, "PROD_DETAILS": prod_details,
             "SALES": sales_total, "SALES_DETAILS": sales_details,
             "STOCK": stock_total, "STOCK_DETAILS": stock_details,
-            "CASH_ON_HAND": cash_opening + today_cash
+            "CASH_ON_HAND": cash_opening + today_cash + ledger_credit - ledger_debit
         }
     except Exception as e:
         print(f"METRICS ERROR: {e}")
@@ -131,6 +137,9 @@ def get_filtered_data(report_type, timeframe, specific_dealer=None):
             res = supabase.postgrest.schema("suguna_aqua").table("SALES").select("*").eq("TYPE", "LINE").gte("DATE", start_str).order("DATE", desc=True).execute()
             data = res.data or []
             return [{"DRIVER": r.get('DRIVER'), "PLACE": r.get('ROUTE'), "MOBILE": r.get('MOBILE'), "DATE": r.get('DATE'), "250ML": r.get('250ML', 0), "500ML": r.get('500ML', 0), "1LTR": r.get('1LTR', 0), "2LTR": r.get('2LTR', 0), "5LTR": r.get('5LTR', 0), "20LTR": r.get('20LTR', 0), "BAGS": r.get('BAGS', 0), "QUANTITY": r.get('QUANTITY', 0)} for r in data]
+
+        elif report_type == "Account Ledger":
+            return get_ledger_report(head_name=specific_dealer, timeframe=timeframe)
 
         elif report_type == "Dealer Sales":
             # 1. Fetch current dealer prices for bill calculation
@@ -356,4 +365,51 @@ def get_dealer_dispatches(date_str):
         return dispatches
     except Exception as e:
         print(f"DEALER FETCH ERROR: {e}")
+        return []
+
+# --- ACCOUNT LEDGER FUNCTIONS ---
+
+def get_account_heads():
+    try:
+        resp = supabase.postgrest.schema("suguna_aqua").table("ACCOUNT_HEADS").select("*").order("NAME").execute()
+        return resp.data if resp.data else []
+    except: return []
+
+def add_account_head(name):
+    try:
+        supabase.postgrest.schema("suguna_aqua").table("ACCOUNT_HEADS").insert({"NAME": name}).execute()
+        return True
+    except Exception as e:
+        print(f"ADD HEAD ERROR: {e}")
+        return False
+
+def save_account_transaction(data):
+    try:
+        # data: HEAD_ID, HEAD_NAME, CREDIT, DEBIT, TO_BE_PAID, DATE
+        supabase.postgrest.schema("suguna_aqua").table("ACCOUNT_TRANSACTIONS").insert(data).execute()
+        return True
+    except Exception as e:
+        print(f"SAVE LEDGER ERROR: {e}")
+        return False
+
+def get_ledger_report(head_name=None, timeframe='monthly'):
+    try:
+        import datetime
+        now = datetime.datetime.now()
+        if timeframe == 'daily': start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif timeframe == 'weekly': start_date = now - datetime.timedelta(days=7)
+        elif timeframe == 'monthly': start_date = now - datetime.timedelta(days=30)
+        elif timeframe == 'yearly': start_date = now - datetime.timedelta(days=365)
+        else: start_date = now - datetime.timedelta(days=30)
+        
+        start_str = start_date.strftime("%Y-%m-%d %H:%M:%S")
+        
+        query = supabase.postgrest.schema("suguna_aqua").table("ACCOUNT_TRANSACTIONS").select("*").gte("DATE", start_str)
+        if head_name and head_name != "All Heads":
+            query = query.eq("HEAD_NAME", head_name)
+        
+        resp = query.order("DATE", desc=True).execute()
+        return resp.data if resp.data else []
+    except Exception as e:
+        print(f"LEDGER REPORT ERROR: {e}")
         return []

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
-from supabase_handler import verify_user, get_dashboard_metrics, save_production_data, get_filtered_data, get_vehicles, get_routes, add_route, save_sales_data, end_day_process, get_todays_dispatches, save_cash_entry, get_driver_dues, get_dealers, add_dealer, update_dealer_prices, get_dealer_dispatches
+from supabase_handler import verify_user, get_dashboard_metrics, save_production_data, get_filtered_data, get_vehicles, get_routes, add_route, save_sales_data, end_day_process, get_todays_dispatches, save_cash_entry, get_driver_dues, get_dealers, add_dealer, update_dealer_prices, get_dealer_dispatches, get_account_heads, add_account_head, save_account_transaction, get_ledger_report
 import os, datetime, io
 import pandas as pd
 
@@ -37,7 +37,8 @@ def products():
     todays_dispatches = get_todays_dispatches()
     driver_dues = get_driver_dues()
     dealers = get_dealers()
-    return render_template('products.html', metrics=metrics, vehicles=vehicles, routes=routes, todays_dispatches=todays_dispatches, driver_dues=driver_dues, dealers=dealers)
+    account_heads = get_account_heads()
+    return render_template('products.html', metrics=metrics, vehicles=vehicles, routes=routes, todays_dispatches=todays_dispatches, driver_dues=driver_dues, dealers=dealers, account_heads=account_heads)
 
 @app.route('/save_production', methods=['POST'])
 def save_production():
@@ -88,8 +89,12 @@ def export_report():
     
     report_type = request.args.get('type', 'Production')
     timeframe = request.args.get('timeframe', 'monthly')
-    dealer_name = request.args.get('dealer') # New parameter for filtering
-    data = get_filtered_data(report_type, timeframe, specific_dealer=dealer_name)
+    dealer_name = request.args.get('dealer')
+    ledger_head = request.args.get('head')
+    
+    # Use dealer filter for dealer sales, otherwise use ledger head filter
+    specific_filter = dealer_name if report_type == 'Dealer Sales' else ledger_head
+    data = get_filtered_data(report_type, timeframe, specific_dealer=specific_filter)
     
     if not data:
         flash("No data found for the selected report.", "error")
@@ -310,6 +315,41 @@ def update_dealer_payment():
         flash(f"Payment of ₹{amount_paid} recorded for {dealer_name}", "success")
     
     return redirect(url_for('products'))
+
+@app.route('/add_account_head', methods=['POST'])
+def add_account_head_route():
+    if 'user' not in session: return redirect(url_for('login'))
+    name = request.form.get('head_name')
+    if name:
+        if add_account_head(name): flash(f"Account Head '{name}' added!", "success")
+        else: flash("Failed to add head or it already exists", "error")
+    return redirect(url_for('products'))
+
+@app.route('/save_ledger_transaction', methods=['POST'])
+def save_ledger_transaction():
+    if 'user' not in session: return jsonify({"success": False}), 401
+    try:
+        head_data = request.form.get('head_id_name').split('|')
+        data = {
+            # "HEAD_ID": int(head_data[0]) if head_data[0] else 0,
+            "HEAD_NAME": head_data[1] if len(head_data) > 1 else "",
+            "PURPOSE": request.form.get('purpose'),
+            "CREDIT": float(request.form.get('credit', '0')),
+            "DEBIT": float(request.form.get('debit', '0')),
+            "TO_BE_PAID": float(request.form.get('to_be_paid', '0')),
+            "DATE": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        if save_account_transaction(data): flash("Transaction recorded!", "success")
+        else: flash("Error saving transaction", "error")
+    except Exception as e: flash(f"Error: {e}", "error")
+    return redirect(url_for('products'))
+
+@app.route('/fetch_ledger_report')
+def fetch_ledger_report_route():
+    if 'user' not in session: return jsonify([])
+    head = request.args.get('head')
+    timeframe = request.args.get('timeframe', 'monthly')
+    return jsonify(get_ledger_report(head_name=head, timeframe=timeframe))
 
 if __name__ == '__main__':
     app.run(debug=True)
