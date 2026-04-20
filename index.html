@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suguna Aqua - Login</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="static/js/supabase_service.js"></script>
+</head>
+<body>
+    <div class="bg-container">
+        <div class="bg-image" style="background-image: url('static/images/navy_bg.png');"></div>
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div id="flash-messages" class="flash-messages"></div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <h2>SUGUNA AQUA</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn">Login to Account</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Checking...";
+            btn.disabled = true;
+
+            const result = await SupabaseService.verifyUser(user, pass);
+            
+            if (result.success) {
+                localStorage.setItem('suguna_user', JSON.stringify(result.user));
+                window.location.href = 'dashboard.html';
+            } else {
+                const flash = document.getElementById('flash-messages');
+                flash.innerHTML = `<div class="flash error">${result.message}</div>`;
+                btn.innerText = "Login to Account";
+                btn.disabled = false;
+            }
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('suguna_user')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
