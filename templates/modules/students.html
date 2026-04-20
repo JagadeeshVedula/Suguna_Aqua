@@ -1,0 +1,73 @@
+<div class="mb-2" style="display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <h2 style="font-weight: 700; color: var(--primary-color);">Student Management</h2>
+        <p style="color: var(--text-muted);">View, filter and manage student records</p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <button class="primary-btn" style="background-color: #10b981;" onclick="exportToExcel('students-table', 'students.xlsx')">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </button>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="stat-card" style="margin-bottom: 2rem; border-left: none; padding: 1.25rem;">
+    <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Class</label>
+            <select class="form-control" id="filter-class">
+                <option value="All">All Classes</option>
+                <!-- Dynamically populate via Python -->
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Section</label>
+            <select class="form-control" id="filter-section">
+                <option value="All">All Sections</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Search Student</label>
+            <input type="text" class="form-control" placeholder="Name or ID..." id="search-student">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: flex-end;">
+            <button class="primary-btn" style="width: 100%;" onclick="fetchStudents()">
+                <i class="fas fa-search"></i> Fetch Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <table id="students-table">
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Full Name</th>
+                <th>Class-Sec</th>
+                <th>Parent Name</th>
+                <th>Mobile</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="students-list">
+            <!-- Data will be loaded via AJAX -->
+            <tr>
+                <td colspan="6" class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                    Select filters and click Fetch to display data
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Simple Modal for Student Details (Hidden by default) -->
+<div id="student-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow-y:auto;">
+    <div style="background:white; max-width:800px; margin:50px auto; border-radius:1rem; padding:2.5rem; position:relative;">
+        <button onclick="closeModal()" style="position:absolute; top:20px; right:20px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <div id="modal-content"></div>
+    </div>
+</div>

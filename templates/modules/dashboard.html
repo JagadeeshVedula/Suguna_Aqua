@@ -1,0 +1,59 @@
+<div class="mb-2">
+    <h2 style="font-weight: 700; color: var(--primary-color);">School Dashboard</h2>
+    <p style="color: var(--text-muted);">Overview of academic stats and strength</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card" style="border-left-color: #3b82f6;">
+        <div class="stat-title">Total Students</div>
+        <div class="stat-value" id="total-students">-</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #10b981;">
+        <div class="stat-title">Total Classes</div>
+        <div class="stat-value" id="total-classes">-</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-title">Total Sections</div>
+        <div class="stat-value" id="total-sections">-</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #8b5cf6;">
+        <div class="stat-title">Academic Students</div>
+        <div class="stat-value" id="academic-students">-</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #ef4444;">
+        <div class="stat-title">Total Dropouts</div>
+        <div class="stat-value" id="total-dropouts">-</div>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <div style="padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-weight: 600;">Class Strength</h3>
+        <button class="primary-btn" onclick="initDashboard()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Section</th>
+                <th>Strength</th>
+                <th>Teacher Assigned</th>
+            </tr>
+        </thead>
+        <tbody id="strength-table-body">
+            <!-- Dynamically populated or static placeholders -->
+            <tr>
+                <td>I</td>
+                <td>A</td>
+                <td>32</td>
+                <td>Mr. V. Raju</td>
+            </tr>
+            <tr>
+                <td>I</td>
+                <td>B</td>
+                <td>28</td>
+                <td>Mrs. S. Kumari</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
