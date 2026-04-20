@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
-    --primary: #00d2ff;
+    --primary: #fb8c00; /* Deep Orange */
     --secondary: #001219;
-    --accent: #48cae4;
+    --accent: #ffb74d; /* Light Orange */
     --glass: rgba(0, 18, 25, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --text: #f8fafc;
+    --glass-border: rgba(251, 140, 0, 0.2); /* Orange tinted border */
+    --text: #ffa726; /* Global Orange Text */
     --header-bg: rgba(0, 10, 15, 0.9);
 }
 
@@ -58,8 +58,15 @@ body {
 }
 
 @keyframes pulseGradient {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(1.1); opacity: 1; }
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
 }
 
 /* Bubbles Animation */
@@ -82,9 +89,19 @@ body {
 }
 
 @keyframes rise {
-    0% { transform: translateY(0) scale(1); opacity: 0; }
-    20% { opacity: 0.3; }
-    100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 0.3;
+    }
+
+    100% {
+        transform: translateY(-110vh) scale(0.5);
+        opacity: 0;
+    }
 }
 
 /* Water Wave Animation */
@@ -115,13 +132,25 @@ body {
 }
 
 @keyframes wave {
-    0% { margin-left: 0; }
-    100% { margin-left: -1600px; }
+    0% {
+        margin-left: 0;
+    }
+
+    100% {
+        margin-left: -1600px;
+    }
 }
 
 @keyframes swell {
-    0%, 100% { transform: translate3d(0, -25px, 0); }
-    50% { transform: translate3d(0, 5px, 0); }
+
+    0%,
+    100% {
+        transform: translate3d(0, -25px, 0);
+    }
+
+    50% {
+        transform: translate3d(0, 5px, 0);
+    }
 }
 
 /* Login Page Styles */
@@ -133,7 +162,8 @@ body {
 }
 
 .login-card {
-    background: rgba(255, 255, 255, 0.95); /* Increased opacity for clarity */
+    background: rgba(255, 255, 255, 0.95);
+    /* Increased opacity for clarity */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(0, 119, 190, 0.2);
@@ -146,8 +176,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .login-card h2 {
@@ -168,16 +205,19 @@ body {
     margin-bottom: 0.6rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: #475569; /* Darker labels */
+    color: #475569;
+    /* Darker labels */
 }
 
 .form-group input {
     width: 100%;
     padding: 1rem 1.2rem;
-    background: #f8fafc; /* solid light background for input */
+    background: #f8fafc;
+    /* solid light background for input */
     border: 1.5px solid #e2e8f0;
     border-radius: 14px;
-    color: #0f172a; /* much darker text for visibility */
+    color: #0f172a;
+    /* much darker text for visibility */
     font-size: 1rem;
     font-weight: 500;
     transition: all 0.3s ease;
@@ -300,9 +340,9 @@ body {
 }
 
 .nav-item.active {
-    color: white;
+    color: #001219;
     background: var(--primary);
-    box-shadow: 0 5px 15px rgba(0, 119, 190, 0.3);
+    box-shadow: 0 5px 15px rgba(251, 140, 0, 0.3);
 }
 
 .content {
@@ -321,8 +361,15 @@ body {
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .glass-panel {
@@ -351,7 +398,7 @@ body {
     text-align: center;
     background: rgba(183, 28, 28, 0.8);
     backdrop-filter: blur(5px);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Dashboard Tiles */
@@ -408,12 +455,12 @@ body {
 }
 
 .tile-value {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: white;
+    font-size: 3.8rem;
+    font-weight: 900;
+    color: #fffbeb;
     margin-top: 0.5rem;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .tile-footer {
@@ -423,7 +470,7 @@ body {
     font-size: 0.8rem;
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Reports Page Styles */
@@ -448,8 +495,10 @@ body {
     text-transform: uppercase;
 }
 
-select, .report-select {
-    background-color: #1a2c3a !important; /* solid dark blue/navy */
+select,
+.report-select {
+    background-color: #1a2c3a !important;
+    /* solid dark blue/navy */
     color: #ffffff !important;
     border: 1.5px solid rgba(255, 255, 255, 0.2);
     padding: 1rem;
@@ -609,7 +658,8 @@ select option {
     gap: 8px;
 }
 
-.add-btn:hover, .add-btn.active {
+.add-btn:hover,
+.add-btn.active {
     background: var(--accent);
     color: #001219;
     box-shadow: 0 0 15px rgba(72, 202, 228, 0.4);
@@ -636,7 +686,8 @@ select option {
     text-transform: uppercase;
 }
 
-.form-input-group select, .form-input-group input {
+.form-input-group select,
+.form-input-group input {
     background: #1a2c3a;
     border: 1.5px solid rgba(255, 255, 255, 0.1);
     color: white;
@@ -692,7 +743,7 @@ select option {
 .return-input-group input {
     width: 100%;
     background: #1a2c3a;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 0.8rem;
     border-radius: 10px;
@@ -718,7 +769,7 @@ select option {
     padding: 1rem;
     border-radius: 12px;
     margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .cust-qty-grid {
@@ -731,17 +782,31 @@ select option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
     padding: 5px;
     border-radius: 6px;
 }
 
-.mini-qty span { font-size: 0.65rem; opacity: 0.5; margin-bottom: 2px; }
-.mini-qty input { width: 100%; text-align: center; background: none; border: none; color: white; border-bottom: 1px solid rgba(255,255,255,0.2); font-size: 0.9rem; }
+.mini-qty span {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    margin-bottom: 2px;
+}
 
-.cust-name, .cust-rate {
+.mini-qty input {
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.9rem;
+}
+
+.cust-name,
+.cust-rate {
     background: #1a2c3a;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 0.8rem;
     border-radius: 8px;
@@ -759,7 +824,10 @@ select option {
     transition: all 0.3s ease;
 }
 
-.add-mini-btn:hover { background: var(--accent); color: #001219; }
+.add-mini-btn:hover {
+    background: var(--accent);
+    color: #001219;
+}
 
 .net-sold-badge {
     background: rgba(0, 245, 160, 0.1);
@@ -773,16 +841,17 @@ select option {
 }
 
 .mini-qty-rate {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.qty-field, .rate-field {
+.qty-field,
+.rate-field {
     width: 60px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 4px;
     border-radius: 4px;
@@ -790,7 +859,8 @@ select option {
     font-size: 0.85rem;
 }
 
-.qty-field:focus, .rate-field:focus {
+.qty-field:focus,
+.rate-field:focus {
     border-color: var(--accent);
     outline: none;
 }
