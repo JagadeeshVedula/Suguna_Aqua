@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suguna Aqua - Products</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-container">
+        <div class="bg-image" style="background-image: url('{{ url_for('static', filename='images/navy_bg.png') }}');"></div>
+        <div class="bg-overlay"></div>
+        <div class="bubbles" id="bubbleContainer"></div>
+    </div>
+
+    <div class="header-wrapper">
+        <header class="header">
+            <div class="header-top">
+                <h1>SUGUNA AQUA PRODUCTS</h1>
+                <div class="user-actions">
+                    <a href="javascript:void(0)" onclick="confirmEndDay()" class="logout-btn" style="background: #f59e0b; color: #000; margin-right: 10px;">End Day</a>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" onclick="showSection('dashboard', this)">Dashboard</li>
+                <li class="nav-item" onclick="showSection('production', this)">Production</li>
+                <li class="nav-item" onclick="showSection('line', this)">Line</li>
+                <li class="nav-item" onclick="showSection('sales', this)">Sales</li>
+                <li class="nav-item" onclick="showSection('reports', this)">Reports</li>
+            </ul>
+        </header>
+    </div>
+
+    <main class="content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="page-section active">
+            <div class="tile-grid">
+                <!-- Opening Balance Tile -->
+                <div class="tile">
+                    <div class="tile-header">
+                        <i class="fas fa-wallet tile-icon"></i>
+                        <span class="trend-up"><i class="fas fa-arrow-up"></i> {{ "{:,.0f}".format(metrics['OPENING_BALANCE']) }} Total</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div class="tile-label">Opening Breakdown</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                            {% for key, val in metrics['OPENING_DETAILS'].items() %}
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0;">
+                                <span>{{ key }}:</span>
+                                <span style="color: white; font-weight: 600;">{{ "{:,.0f}".format(val) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Production Tile -->
+                <div class="tile">
+                    <div class="tile-header">
+                        <i class="fas fa-industry tile-icon"></i>
+                        <span class="trend-up"><i class="fas fa-arrow-up"></i> {{ "{:,.0f}".format(metrics['PRODUCTION']) }} Total</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div class="tile-label">Production Breakdown</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                            {% for key, val in metrics['PROD_DETAILS'].items() %}
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0;">
+                                <span>{{ key }}:</span>
+                                <span style="color: white; font-weight: 600;">{{ "{:,.0f}".format(val) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Tile -->
+                <div class="tile">
+                    <div class="tile-header">
+                        <i class="fas fa-chart-line tile-icon"></i>
+                        <span class="trend-down"><i class="fas fa-arrow-down"></i> {{ "{:,.0f}".format(metrics['SALES']) }} Total</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div class="tile-label">Dispatched Items</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                            {% for key, val in metrics['SALES_DETAILS'].items() %}
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0;">
+                                <span>{{ key }}:</span>
+                                <span style="color: white; font-weight: 600;">{{ "{:,.0f}".format(val) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Tile -->
+                <div class="tile">
+                    <div class="tile-header">
+                        <i class="fas fa-boxes-stacked tile-icon"></i>
+                        <span class="trend-up"><i class="fas fa-check"></i> {{ "{:,.0f}".format(metrics['STOCK']) }} Total</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div class="tile-label">Current Pool Stock</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                            {% for key, val in metrics['STOCK_DETAILS'].items() %}
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0;">
+                                <span>{{ key }}:</span>
+                                <span style="color: white; font-weight: 600;">{{ "{:,.0f}".format(val) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cash On Hand Tile -->
+                <div class="tile">
+                    <div class="tile-header">
+                        <i class="fas fa-hand-holding-dollar tile-icon"></i>
+                        <span class="trend-up"><i class="fas fa-coins"></i> Active</span>
+                    </div>
+                    <div>
+                        <div class="tile-label">Cash On Hand</div>
+                        <div class="tile-value">₹{{ "{:,.0f}".format(metrics['CASH_ON_HAND']) }}</div>
+                    </div>
+                    <div class="tile-footer">In Rupees</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Production Section -->
+        <section id="production" class="page-section">
+            <form action="/save_production" method="POST" class="glass-panel">
+                <h2 style="font-size: 2.2rem; margin-bottom: 2rem; color: var(--primary); text-align: center;">Production Entry</h2>
+                
+                <div class="production-entry-grid">
+                    <div class="input-tile">
+                        <label>250ML Bottles</label>
+                        <input type="number" name="250ml" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>500ML Bottles</label>
+                        <input type="number" name="500ml" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>1LTR Bottles</label>
+                        <input type="number" name="1ltr" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>2LTR Bottles</label>
+                        <input type="number" name="2ltr" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>5LTR Cans</label>
+                        <input type="number" name="5ltr" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>20LTR Cans</label>
+                        <input type="number" name="20ltr" value="0" min="0">
+                    </div>
+                    <div class="input-tile">
+                        <label>Bags</label>
+                        <input type="number" name="bags" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="save-btn-container">
+                    <button type="submit" class="save-production-btn">
+                        <i class="fas fa-save" style="margin-right: 10px;"></i> Save Production
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Line Section -->
+        <section id="line" class="page-section">
+            <div class="glass-panel">
+                <div class="section-header">
+                    <h2 style="font-size: 2.2rem; color: var(--accent);">Dispatch & Line Out</h2>
+                    <button class="add-btn" onclick="addNewRoute()">
+                        <i class="fas fa-plus"></i> Add Route
+                    </button>
+                </div>
+
+                <form action="/save_sales" method="POST">
+                    <div class="line-form-grid">
+                        <div class="form-input-group">
+                            <label>Vehicle No</label>
+                            <select name="vehicle_no" required>
+                                <option value="">Select Vehicle</option>
+                                {% for v in vehicles %}
+                                <option value="{{ v.VEHICLE_NO }}">{{ v.VEHICLE_NO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-input-group">
+                            <label>Route</label>
+                            <select name="route" required>
+                                <option value="">Select Route</option>
+                                {% for r in routes %}
+                                <option value="{{ r.ROUTE }}">{{ r.ROUTE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-input-group">
+                            <label>Driver Name</label>
+                            <input type="text" name="driver_name" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-input-group">
+                            <label>Driver Mobile</label>
+                            <input type="tel" name="driver_mobile" placeholder="Mobile Number" required>
+                        </div>
+                        <div class="form-input-group">
+                            <label>Aadhar Number</label>
+                            <input type="text" name="aadhar_no" placeholder="12-digit Number" required>
+                        </div>
+                    </div>
+
+                    <h3 style="color: var(--accent); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px;">Product Quantities</h3>
+                    <div class="production-entry-grid">
+                        <div class="input-tile">
+                            <label>250ML</label>
+                            <input type="number" name="250ml" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>500ML</label>
+                            <input type="number" name="500ml" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>1LTR</label>
+                            <input type="number" name="1ltr" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>2LTR</label>
+                            <input type="number" name="2ltr" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>5LTR</label>
+                            <input type="number" name="5ltr" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>20LTR</label>
+                            <input type="number" name="20ltr" value="0" min="0">
+                        </div>
+                        <div class="input-tile">
+                            <label>Bags</label>
+                            <input type="number" name="bags" value="0" min="0">
+                        </div>
+                    </div>
+
+                    <div class="save-btn-container" style="margin-top: 2rem;">
+                        <button type="submit" class="save-production-btn">
+                            <i class="fas fa-paper-plane" style="margin-right: 10px;"></i> Record Dispatch
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Hidden form for Adding Route -->
+                <form id="addRouteForm" action="/add_route_entry" method="POST" style="display: none;">
+                    <input type="hidden" name="new_route" id="new_route_input">
+                </form>
+            </div>
+        </section>
+
+        <!-- Sales Section (Re-designed) -->
+        <section id="sales" class="page-section">
+            <div class="glass-panel">
+                <div class="section-header">
+                    <h2 style="font-size: 2.2rem; color: var(--accent);">Collection & Sales</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="add-btn active" onclick="toggleSalesSub('line-sale', this)">Line Sale</button>
+                        <button class="add-btn" onclick="toggleSalesSub('counter-sale', this)">Counter Sale</button>
+                        <button class="add-btn" onclick="toggleSalesSub('dealer-sale', this)">Dealer Sale</button>
+                    </div>
+                </div>
+
+                <!-- Line Sale Sub-Section -->
+                <div id="line-sale" class="sales-subactive">
+                    <h3 style="color: var(--accent); margin-bottom: 2rem;">Today's Dispatches for Settlement</h3>
+                    {% if todays_dispatches %}
+                        {% for s in todays_dispatches %}
+                        <form action="/save_cash_entry" method="POST" class="glass-panel settlement-card" style="margin-bottom: 3rem; padding: 2.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <input type="hidden" name="sales_id" value="{{ s.id }}">
+                            <input type="hidden" name="vehicle_no" value="{{ s.VEHICLE_NO }}">
+                            <input type="hidden" name="driver" value="{{ s.DRIVER }}">
+                            
+                            <div class="settlement-header">
+                                <div class="dispatch-info">
+                                    <div style="font-size: 1.4rem; font-weight: 700; color: white;">Vehicle: {{ s.VEHICLE_NO }} <span style="font-size: 1rem; color: var(--accent); margin-left: 15px;">| Driver: {{ s.DRIVER }}</span></div>
+                                    <div style="font-size: 0.85rem; opacity: 0.6; margin-top: 5px;">Route: {{ s.ROUTE }} • Dispatch Time: {{ s.DATE.split(' ')[1] }}</div>
+                                </div>
+                                <div class="dispatch-stats">
+                                    <div class="stat-badge">Total Loaded: {{ s.QUANTITY }} Units</div>
+                                </div>
+                            </div>
+
+                            <!-- 1. Inventory Returns Section -->
+                            <div class="reconcile-section">
+                                <h4 class="section-title"><i class="fas fa-undo"></i> 1. Inventory Returns & Net Sold Summary</h4>
+                                <div class="return-grid">
+                                    {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                        {% if s[item]|int > 0 %}
+                                        <div class="return-input-group">
+                                            <label>{{ item }} (Loaded: {{ s[item] }})</label>
+                                            <div style="display: flex; gap: 5px; align-items: center; position: relative;">
+                                                <input type="number" name="return_{{ item.lower() }}" value="0" min="0" max="{{ s[item] }}" oninput="updateSettlement(this.closest('form'))" style="flex: 1;">
+                                                <div class="net-sold-badge" data-item="{{ item }}" data-loaded="{{ s[item] }}">Sold: 0</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- 2. Customer Sales Section -->
+                            <div class="reconcile-section" style="margin-top: 2rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                    <h4 class="section-title" style="margin:0;"><i class="fas fa-users"></i> 2. Customer Billing (Itemized Rates)</h4>
+                                    <button type="button" class="add-mini-btn" onclick="addCustomerRow(this)">
+                                        <i class="fas fa-user-plus"></i> Add Customer
+                                    </button>
+                                </div>
+                                <div class="customer-rows-container">
+                                    <div class="customer-entry-header" style="grid-template-columns: 1fr 3fr 1.2fr 40px;">
+                                        <span>Customer</span>
+                                        <span>Items (Qty @ Rate)</span>
+                                        <span style="text-align: right;">Bill Amount</span>
+                                        <span></span>
+                                    </div>
+                                    <div class="customer-list">
+                                        <div class="customer-row" style="grid-template-columns: 1fr 3fr 1.2fr 40px;">
+                                            <input type="text" placeholder="Customer Name" class="cust-name">
+                                            <div class="cust-qty-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                                                {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                                {% if s[item]|int > 0 %}
+                                                <div class="mini-qty-rate">
+                                                    <span style="font-size: 0.65rem; opacity: 0.7;">{{ item }}</span>
+                                                    <div style="display: flex; gap: 4px;">
+                                                        <input type="number" class="qty-field" data-item="{{ item }}" value="0" placeholder="Qty" oninput="updateSettlement(this.closest('form'))">
+                                                        <input type="number" step="0.1" class="rate-field" value="0" placeholder="₹" oninput="updateSettlement(this.closest('form'))">
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <span class="cust-subtotal" style="text-align: right; color: var(--accent); font-weight: 700; font-size: 1.1rem;">₹0.00</span>
+                                            <button type="button" class="remove-row" onclick="this.closest('.customer-row').remove(); updateSettlement(this.closest('form'))"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Final Settlement Calculations -->
+                            <div class="reconcile-section summary-box" style="margin-top: 2.5rem; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 15px;">
+                                <div class="summary-grid">
+                                    <div class="form-input-group">
+                                        <label>Net Total Bill (All Cust)</label>
+                                        <input type="number" name="total_amount" value="0" readonly class="total-bill-field">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Paid by Customers (Actual)</label>
+                                        <input type="number" name="paid_by_customer" value="0" step="0.01" oninput="updateSettlement(this.closest('form'))">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Expenses (Food/Misc)</label>
+                                        <input type="number" name="expenses" value="0" step="0.01" oninput="updateSettlement(this.closest('form'))">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Cash Paid to Office</label>
+                                        <input type="number" name="cash_received" value="0" step="0.01" oninput="updateSettlement(this.closest('form'))">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Driver Net Due</label>
+                                        <input type="number" name="due" value="0" readonly class="driver-due-field" style="color: #ff595e; font-weight: 800; font-size: 1.2rem;">
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden Itemized Sales Totals -->
+                                {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                <input type="hidden" name="sold_{{ item.lower() }}" class="sold-{{ item.lower() }}-final" value="0">
+                                {% endfor %}
+
+                                <div id="settlementError" style="display: none; background: rgba(255, 89, 94, 0.1); border: 1px solid #ff595e; color: #ff595e; padding: 1rem; border-radius: 10px; margin-top: 1.5rem; font-weight: 700; text-align: center;">
+                                    ⚠️ Critical Error: Total assigned quantity crosses sold count! Please check your billing inputs.
+                                </div>
+
+                                <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                                    <button type="submit" id="confirmBtn" class="save-production-btn" style="width: auto; padding: 1.2rem 3rem;">
+                                        <i class="fas fa-file-invoice-dollar"></i> Confirm Settlement
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; padding: 5rem; opacity: 0.5;">
+                            <i class="fas fa-truck-loading" style="font-size: 4rem; display: block; margin-bottom: 2rem;"></i>
+                            No units have been dispatched yet today.
+                        </div>
+                    {% endif %}
+
+                    <div style="margin-top: 4rem;">
+                        <h3 style="color: #ff595e; margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-exclamation-triangle"></i> Driver Dues Registry
+                        </h3>
+                        <div class="report-table-container" style="background: rgba(255, 89, 94, 0.05); border-color: rgba(255, 89, 94, 0.2);">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Driver Name</th>
+                                        <th style="text-align: right;">Total Outstanding Due</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for driver, amount in driver_dues.items() %}
+                                    <tr>
+                                        <td>{{ driver }}</td>
+                                        <td style="text-align: right; color: #ff595e; font-weight: 700; font-size: 1.1rem;">₹{{ "{:,.0f}".format(amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Counter Sale Sub-Section -->
+                <div id="counter-sale" style="display: none;">
+                    <div style="text-align: center; padding: 5rem;">
+                        <i class="fas fa-calculator" style="font-size: 4rem; opacity: 0.2; margin-bottom: 2rem;"></i>
+                        <p>Counter Sale Module under development...</p>
+                    </div>
+                </div>
+
+                <!-- Dealer Sale Sub-Section -->
+                <div id="dealer-sale" style="display: none;">
+                    <div class="glass-panel" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05); border-radius: 0 0 24px 24px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 10px;">
+                            <button class="add-btn active" onclick="toggleDealerSub('dealer-dispatch', this)">Dealer Dispatch</button>
+                            <button class="add-btn" onclick="toggleDealerSub('add-dealer', this)">Add New Dealer</button>
+                            <button class="add-btn" onclick="toggleDealerSub('manage-dealers', this)">Manage Prices</button>
+                            <button class="add-btn" onclick="toggleDealerSub('dealer-ledger', this)">Payment Ledger</button>
+                        </div>
+
+                        <!-- 1. Dealer Dispatch -->
+                        <div id="dealer-dispatch" class="dealer-subactive">
+                            <form action="/save_dealer_dispatch" method="POST">
+                                <div class="line-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                                    <div class="form-input-group">
+                                        <label>Select Dealer</label>
+                                        <select name="dealer_name" required onchange="loadDealerData(this)" id="dealerSelect">
+                                            <option value="">-- Choose Dealer --</option>
+                                            {% for d in dealers %}
+                                            <option value="{{ d.NAME }}" 
+                                                    data-place="{{ d.PLACE }}"
+                                                    data-pr250="{{ d.PR_250ML }}" data-pr500="{{ d.PR_500ML }}"
+                                                    data-pr1l="{{ d.PR_1LTR }}" data-pr2l="{{ d.PR_2LTR }}"
+                                                    data-pr5l="{{ d.PR_5LTR }}" data-pr20l="{{ d.PR_20LTR }}"
+                                                    data-prbags="{{ d.PR_BAGS }}">{{ d.NAME }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Place</label>
+                                        <input type="text" name="place" id="dealerPlace" readonly style="background: rgba(0,0,0,0.2);">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Payment Status</label>
+                                        <select name="payment_status" onchange="toggleDealerPaidInput(this)">
+                                            <option value="unpaid">Unpaid / Credit</option>
+                                            <option value="partial">Partially Paid</option>
+                                            <option value="full">Fully Paid</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-input-group" id="dealerPaidGroup" style="display: none;">
+                                        <label>Amount Paid (INR)</label>
+                                        <input type="number" name="amount_paid" id="dealerAmountPaid" value="0" step="0.01" oninput="validateDealerPay(this)">
+                                    </div>
+                                </div>
+
+                                <h4 class="section-title">Dispatch Quantities</h4>
+                                <div class="return-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                                    {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                    <div class="input-tile" style="padding: 1rem;">
+                                        <label style="font-size: 0.8rem;">{{ item }}</label>
+                                        <input type="number" name="{{ item.lower() }}" value="0" oninput="calcDealerTotal()" class="dealer-qty" style="font-size: 1.2rem;">
+                                        <span id="p-{{ item.lower() }}" style="display: none;">0</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="summary-box" style="margin-top: 2.5rem; background: rgba(0,0,0,0.3); padding: 2rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-size: 0.9rem; opacity: 0.6;">Total Quantity</div>
+                                        <input type="text" id="dealerTotalQty" name="total_qty" value="0" readonly style="background: none; border: none; color: white; font-size: 1.5rem; font-weight: 700;">
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 0.9rem; opacity: 0.6;">Total Billable Amount</div>
+                                        <input type="text" id="dealerTotalAmount" name="total_amount" value="0.00" readonly style="background: none; border: none; color: var(--accent); font-size: 2.2rem; font-weight: 800;">
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                                    <button type="submit" class="save-production-btn" style="width: auto; padding: 1.2rem 4rem;">Confirm Dealer Dispatch</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 2. Add New Dealer -->
+                        <div id="add-dealer" style="display: none;">
+                            <form action="/add_dealer" method="POST">
+                                <div class="line-form-grid">
+                                    <div class="form-input-group">
+                                        <label>Dealer Name</label>
+                                        <input type="text" name="name" required placeholder="Full Name">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Place / Area</label>
+                                        <input type="text" name="place" required placeholder="District/Town">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Mobile Number</label>
+                                        <input type="text" name="mobile" placeholder="Contact Number">
+                                    </div>
+                                    <div class="form-input-group">
+                                        <label>Aadhar Number</label>
+                                        <input type="text" name="adhar" placeholder="12 Digit Aadhar">
+                                    </div>
+                                </div>
+                                <h4 class="section-title">Default Unit Prices (INR)</h4>
+                                <div class="return-grid">
+                                    {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                    <div class="form-input-group">
+                                        <label>{{ item }} Price</label>
+                                        <input type="number" step="0.01" name="pr_{{ item.lower() }}" value="0">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                                    <button type="submit" class="save-production-btn">Register Dealer</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 3. Manage Dealer Prices -->
+                        <div id="manage-dealers" style="display: none;">
+                            <form action="/update_dealer_prices" method="POST">
+                                <div class="form-input-group" style="max-width: 400px; margin-bottom: 2rem;">
+                                    <label>Select Dealer to Edit</label>
+                                    <select name="name" onchange="fillManagePrices(this)" required>
+                                        <option value="">-- Choose Dealer --</option>
+                                        {% for d in dealers %}
+                                        <option value="{{ d.NAME }}" 
+                                                data-pr250="{{ d.PR_250ML }}" data-pr500="{{ d.PR_500ML }}"
+                                                data-pr1l="{{ d.PR_1LTR }}" data-pr2l="{{ d.PR_2LTR }}"
+                                                data-pr5l="{{ d.PR_5LTR }}" data-pr20l="{{ d.PR_20LTR }}"
+                                                data-prbags="{{ d.PR_BAGS }}">{{ d.NAME }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="return-grid" id="managePriceInputs">
+                                    {% for item in ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"] %}
+                                    <div class="form-input-group">
+                                        <label>{{ item }} Price</label>
+                                        <input type="number" step="0.01" name="pr_{{ item.lower() }}" id="edit-pr-{{ item.lower() }}" value="0">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                                    <button type="submit" class="save-production-btn" style="background: var(--accent); color: #000;">Update Prices</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 4. Dealer Ledger -->
+                        <div id="dealer-ledger" style="display: none;">
+                            <div class="line-form-grid" style="margin-bottom: 2rem; grid-template-columns: 1fr auto;">
+                                <div class="form-input-group">
+                                    <label>Filter Dispatches by Date</label>
+                                    <input type="date" id="ledgerDate" onchange="fetchDealerLedger()">
+                                </div>
+                                <div style="display: flex; align-items: flex-end;">
+                                    <button class="action-btn" onclick="fetchDealerLedger()"><i class="fas fa-sync"></i> Refresh</button>
+                                </div>
+                            </div>
+
+                            <div class="report-table-container">
+                                <table class="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Dealer</th>
+                                            <th>Total Bill</th>
+                                            <th>Paid</th>
+                                            <th style="color: var(--accent);">Pending</th>
+                                            <th style="text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ledgerContent">
+                                        <tr><td colspan="6" style="text-align: center; padding: 2rem; opacity: 0.5;">Select a date to view dealer dispatches...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="page-section">
+            <div class="glass-panel">
+                <h2 style="font-size: 2.2rem; margin-bottom: 2rem; color: var(--accent);">Resource Reports</h2>
+                
+                <div class="report-controls">
+                    <div class="control-group">
+                        <label>Report Category</label>
+                        <select id="reportType" class="report-select" onchange="toggleReportFilters(this)">
+                            <option value="Production">Production</option>
+                            <option value="Sales">Line Sales</option>
+                            <option value="Dealer Sales">Dealer Sales</option>
+                            <option value="Stock">Stock (Current)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" id="dealerFilterGroup" style="display: none;">
+                        <label>Select Dealer</label>
+                        <select id="reportDealer" class="report-select">
+                            <option value="All Dealers">All Dealers</option>
+                            {% for d in dealers %}
+                            <option value="{{ d.NAME }}">{{ d.NAME }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Timeframe</label>
+                        <select id="reportTimeframe" class="report-select">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="generateReport()">
+                        <i class="fas fa-sync"></i> Generate
+                    </button>
+                    <button class="action-btn export-btn" onclick="exportExcel()">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                </div>
+
+                <div class="report-table-container">
+                    <table class="report-table" id="reportTable">
+                        <thead id="reportHeader">
+                            <!-- Headers generated dynamically -->
+                        </thead>
+                        <tbody id="reportContent">
+                            <tr><td colspan="10" style="text-align: center; padding: 3rem; opacity: 0.5;">Select filters and tap generate...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        async function generateReport() {
+            const type = document.getElementById('reportType').value;
+            const timeframe = document.getElementById('reportTimeframe').value;
+            const tableHeader = document.getElementById('reportHeader');
+            const tableBody = document.getElementById('reportContent');
+
+            tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 3rem;">Fetching data...</td></tr>';
+
+            try {
+                const response = await fetch(`/get_report?type=${type}&timeframe=${timeframe}`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 3rem; opacity: 0.5;">No data found for this period.</td></tr>';
+                    return;
+                }
+
+                // Generate Headers
+                const headers = Object.keys(data[0]);
+                tableHeader.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+                // Generate Rows
+                tableBody.innerHTML = data.map(row => `
+                    <tr>${headers.map(h => `<td>${row[h] || '-'}</td>`).join('')}</tr>
+                `).join('');
+
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ff595e;">Error: ${error}</td></tr>`;
+            }
+        }
+
+        function exportExcel() {
+            const type = document.getElementById('reportType').value;
+            const timeframe = document.getElementById('reportTimeframe').value;
+            window.location.href = `/export_report?type=${type}&timeframe=${timeframe}`;
+        }
+
+        function addNewRoute() {
+            const route = prompt("Enter New Route Name:");
+            if (route && route.trim() !== "") {
+                document.getElementById('new_route_input').value = route;
+                document.getElementById('addRouteForm').submit();
+            }
+        }
+
+        function confirmEndDay() {
+            if (confirm("Are you sure you want to END THE DAY? This will save current stock as the starting balance for next time.")) {
+                window.location.href = "/end_day";
+            }
+        }
+
+        function toggleSalesSub(subId, btn) {
+            document.getElementById('line-sale').style.display = 'none';
+            document.getElementById('counter-sale').style.display = 'none';
+            document.getElementById('dealer-sale').style.display = 'none';
+            document.getElementById(subId).style.display = 'block';
+            
+            document.querySelectorAll('#sales .add-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function toggleDealerSub(subId, btn) {
+            document.getElementById('dealer-dispatch').style.display = 'none';
+            document.getElementById('add-dealer').style.display = 'none';
+            document.getElementById('manage-dealers').style.display = 'none';
+            document.getElementById(subId).style.display = 'block';
+            
+            document.querySelectorAll('#dealer-sale .add-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function loadDealerData(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt.value) return;
+            
+            document.getElementById('dealerPlace').value = opt.dataset.place;
+            document.getElementById('p-250ml').innerText = opt.dataset.pr250;
+            document.getElementById('p-500ml').innerText = opt.dataset.pr500;
+            document.getElementById('p-1ltr').innerText = opt.dataset.pr1l;
+            document.getElementById('p-2ltr').innerText = opt.dataset.pr2l;
+            document.getElementById('p-5ltr').innerText = opt.dataset.pr5l;
+            document.getElementById('p-20ltr').innerText = opt.dataset.pr20l;
+            document.getElementById('p-bags').innerText = opt.dataset.prbags;
+            
+            calcDealerTotal();
+        }
+
+        function calcDealerTotal() {
+            let totalQty = 0;
+            let totalAmount = 0;
+            const items = ["250ml", "500ml", "1ltr", "2ltr", "5ltr", "20ltr", "bags"];
+            const container = document.getElementById('dealer-dispatch');
+            
+            items.forEach(item => {
+                const qtyInput = container.querySelector(`input[name="${item}"]`);
+                const priceLabel = container.querySelector(`#p-${item}`);
+                
+                const qty = parseInt(qtyInput.value) || 0;
+                const price = parseFloat(priceLabel.innerText) || 0;
+                
+                totalQty += qty;
+                totalAmount += (qty * price);
+            });
+            
+            document.getElementById('dealerTotalQty').value = totalQty;
+            document.getElementById('dealerTotalAmount').value = totalAmount.toFixed(2);
+        }
+
+        function toggleDealerPaidInput(sel) {
+            const group = document.getElementById('dealerPaidGroup');
+            const amtInput = document.getElementById('dealerAmountPaid');
+            const total = parseFloat(document.getElementById('dealerTotalAmount').value) || 0;
+            
+            if (sel.value === 'unpaid') {
+                group.style.display = 'none';
+                amtInput.value = 0;
+            } else if (sel.value === 'full') {
+                group.style.display = 'block';
+                amtInput.value = total;
+                amtInput.readOnly = true;
+            } else {
+                group.style.display = 'block';
+                amtInput.value = 0;
+                amtInput.readOnly = false;
+            }
+        }
+
+        function validateDealerPay(input) {
+            const total = parseFloat(document.getElementById('dealerTotalAmount').value) || 0;
+            if (parseFloat(input.value) > total) {
+                input.value = total;
+                alert("Amount paid cannot exceed total bill!");
+            }
+        }
+
+        function fillManagePrices(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt.value) return;
+            
+            document.getElementById('edit-pr-250ml').value = opt.dataset.pr250;
+            document.getElementById('edit-pr-500ml').value = opt.dataset.pr500;
+            document.getElementById('edit-pr-1ltr').value = opt.dataset.pr1l;
+            document.getElementById('edit-pr-2ltr').value = opt.dataset.pr2l;
+            document.getElementById('edit-pr-5ltr').value = opt.dataset.pr5l;
+            document.getElementById('edit-pr-20ltr').value = opt.dataset.pr20l;
+            document.getElementById('edit-pr-bags').value = opt.dataset.prbags;
+        }
+
+        function addCustomerRow(btn) {
+            const container = btn.closest('.reconcile-section').querySelector('.customer-list');
+            const newRow = container.querySelector('.customer-row').cloneNode(true);
+            newRow.querySelectorAll('input').forEach(i => i.value = (i.type === 'number' ? 0 : ''));
+            newRow.querySelector('.cust-subtotal').innerText = '₹0.00';
+            container.appendChild(newRow);
+        }
+
+        function updateSettlement(form) {
+            let totalBill = 0;
+            const itemizedSoldResult = { "250ml": 0, "500ml": 0, "1ltr": 0, "2ltr": 0, "5ltr": 0, "20ltr": 0, "bags": 0 };
+            const itemizedAvailable = {};
+
+            // 1. Calculate Net Sold (Loaded - Return) for summary badges
+            form.querySelectorAll('.net-sold-badge').forEach(badge => {
+                const itemLabel = badge.dataset.item.toLowerCase();
+                const loaded = parseInt(badge.dataset.loaded) || 0;
+                const fieldName = `return_${itemLabel}`;
+                const returnVal = parseInt(form.querySelector(`[name="${fieldName}"]`).value) || 0;
+                const net = loaded - returnVal;
+                badge.innerText = `Sold: ${net}`;
+                itemizedAvailable[itemLabel] = net;
+            });
+
+            // 2. Process Customer Rows with Itemized Rates
+            form.querySelectorAll('.customer-row').forEach(row => {
+                let rowBill = 0;
+                row.querySelectorAll('.qty-field').forEach((q, idx) => {
+                    const qty = parseInt(q.value) || 0;
+                    const item = q.dataset.item.toLowerCase();
+                    const rateField = row.querySelectorAll('.rate-field')[idx];
+                    const rate = parseFloat(rateField.value) || 0;
+                    
+                    const subItemTotal = qty * rate;
+                    rowBill += subItemTotal;
+                    
+                    if (itemizedSoldResult[item] !== undefined) itemizedSoldResult[item] += qty;
+                });
+                
+                row.querySelector('.cust-subtotal').innerText = '₹' + rowBill.toFixed(2);
+                totalBill += rowBill;
+            });
+
+            // 3. Validation: Compare Customer Total vs Net Available
+            let hasError = false;
+            form.querySelectorAll('.net-sold-badge').forEach(badge => {
+                const itemLabel = badge.dataset.item.toLowerCase();
+                const assigned = itemizedSoldResult[itemLabel];
+                const available = itemizedAvailable[itemLabel];
+                
+                if (assigned > available) {
+                    badge.style.background = '#ff595e';
+                    badge.style.color = '#fff';
+                    badge.style.borderColor = '#ff595e';
+                    hasError = true;
+                } else {
+                    badge.style.background = 'rgba(0, 245, 160, 0.1)';
+                    badge.style.color = '#00f5a0';
+                    badge.style.borderColor = 'rgba(0, 245, 160, 0.2)';
+                }
+            });
+
+            // 4. Handle Error UI and Confirm Button Lock
+            const errorDiv = form.querySelector('#settlementError');
+            const confirmBtn = form.querySelector('#confirmBtn');
+            if (hasError) {
+                errorDiv.style.display = 'block';
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+                confirmBtn.style.cursor = 'not-allowed';
+            } else {
+                errorDiv.style.display = 'none';
+                confirmBtn.disabled = false;
+                confirmBtn.style.opacity = '1';
+                confirmBtn.style.cursor = 'pointer';
+            }
+
+            form.querySelector('.total-bill-field').value = totalBill.toFixed(2);
+
+            // 5. Final Driver Due Calculation (Direct Formula)
+            const expenses = parseFloat(form.querySelector('[name="expenses"]').value) || 0;
+            const cashToOffice = parseFloat(form.querySelector('[name="cash_received"]').value) || 0;
+            
+            // Driver Due = NetTotalBill - Food/Misc - Cashpaidtooffice
+            const driverDue = totalBill - expenses - cashToOffice;
+            
+            form.querySelector('.driver-due-field').value = driverDue.toFixed(2);
+
+            // 6. Update hidden inputs for DB itemized metrics
+            for (let item in itemizedSoldResult) {
+                const hiddenInput = form.querySelector(`.sold-${item}-final`);
+                if (hiddenInput) hiddenInput.value = itemizedSoldResult[item];
+            }
+        }
+
+        // Bubble Generator
+        async function fetchDealerLedger() {
+            const date = document.getElementById('ledgerDate').value;
+            if (!date) return;
+            const tableBody = document.getElementById('ledgerContent');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Searching dispatches...</td></tr>';
+
+            try {
+                const response = await fetch(`/fetch_dealer_dispatches?date=${date}`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; opacity: 0.5;">No dealer dispatches found for this date.</td></tr>';
+                    return;
+                }
+
+                // Get dealers to find prices
+                const dealerSelect = document.getElementById('dealerSelect');
+                let dealers = [];
+                if (dealerSelect) {
+                    dealers = Array.from(dealerSelect.options).slice(1).map(opt => ({
+                        name: opt.value,
+                        prices: {
+                            "250ml": parseFloat(opt.dataset.pr250), "500ml": parseFloat(opt.dataset.pr500),
+                            "1ltr": parseFloat(opt.dataset.pr1l), "2ltr": parseFloat(opt.dataset.pr2l),
+                            "5ltr": parseFloat(opt.dataset.pr5l), "20ltr": parseFloat(opt.dataset.pr20l),
+                            "bags": parseFloat(opt.dataset.prbags)
+                        }
+                    }));
+                }
+
+                tableBody.innerHTML = data.map(d => {
+                    const dl = dealers.find(x => x.name === d.DRIVER) || { prices: {} };
+                    let bill = 0;
+                    ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(item => {
+                        const qty = parseInt(d[item]) || 0;
+                        const price = dl.prices[item.toLowerCase()] || 0;
+                        bill += (qty * price);
+                    });
+
+                    const paid = parseFloat(d.PAID_AMOUNT) || 0;
+                    const pending = Math.max(0, bill - paid);
+
+                    return `
+                        <tr>
+                            <td>${d.DATE.split(' ')[1]}</td>
+                            <td style="font-weight:700;">${d.DRIVER}</td>
+                            <td style="color: grey;">₹${bill.toFixed(2)}</td>
+                            <td style="color: #00f5a0;">₹${paid.toFixed(2)}</td>
+                            <td style="color: var(--accent); font-weight: 800;">₹${pending.toFixed(2)}</td>
+                            <td style="text-align: center;">
+                                ${pending <= 0.01 ? 
+                                    '<span class="badge" style="background:#00f5a0; color:#0e1628; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem;">FULLY PAID</span>' : 
+                                    `<form action="/update_dealer_payment" method="POST" style="display: flex; gap: 5px; justify-content: center; align-items:center;">
+                                        <input type="hidden" name="sales_id" value="${d.id}">
+                                        <input type="hidden" name="dealer_name" value="${d.DRIVER}">
+                                        <input type="hidden" name="total_amount" value="${bill}">
+                                        <input type="number" name="amount_paid" value="${pending.toFixed(2)}" step="0.01" style="width: 100px; padding: 5px; font-size: 0.8rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;">
+                                        <button type="submit" class="add-mini-btn" style="padding: 5px 10px; height: 30px;"><i class="fas fa-check"></i></button>
+                                    </form>`
+                                }
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ff595e;">Error: ${error}</td></tr>`;
+            }
+        }
+
+        function createBubbles() {
+            const container = document.getElementById('bubbleContainer');
+            const bubbleCount = 20;
+
+            for (let i = 0; i < bubbleCount; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                
+                const size = Math.random() * 60 + 10 + 'px';
+                bubble.style.width = size;
+                bubble.style.height = size;
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.setProperty('--duration', Math.random() * 10 + 10 + 's');
+                bubble.style.animationDelay = Math.random() * 20 + 's';
+                
+                container.appendChild(bubble);
+            }
+        }
+
+        function toggleReportFilters(select) {
+            const dealerGroup = document.getElementById('dealerFilterGroup');
+            dealerGroup.style.display = select.value === 'Dealer Sales' ? 'block' : 'none';
+        }
+
+        async function generateReport() {
+            const type = document.getElementById('reportType').value;
+            const timeframe = document.getElementById('reportTimeframe').value;
+            const dealer = document.getElementById('reportDealer').value;
+            
+            const tableHeader = document.getElementById('reportHeader');
+            const tableBody = document.getElementById('reportContent');
+            
+            tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 3rem;">Fetching data...</td></tr>';
+
+            try {
+                const response = await fetch(`/get_report_data?type=${type}&timeframe=${timeframe}&dealer=${dealer}`);
+                const data = await response.json();
+
+                if (!data || data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 3rem; opacity: 0.5;">No records found for this selection.</td></tr>';
+                    return;
+                }
+
+                const keys = Object.keys(data[0]);
+                tableHeader.innerHTML = '<tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr>';
+                tableBody.innerHTML = data.map(row => 
+                    '<tr>' + keys.map(k => `<td>${row[k] || 0}</td>`).join('') + '</tr>'
+                ).join('');
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--accent);">Error: ${error}</td></tr>`;
+            }
+        }
+
+        function exportExcel() {
+            const type = document.getElementById('reportType').value;
+            const timeframe = document.getElementById('reportTimeframe').value;
+            const dealer = document.getElementById('reportDealer').value;
+            window.location.href = `/export_report?type=${type}&timeframe=${timeframe}&dealer=${dealer}`;
+        }
+
+        createBubbles();
+    </script>
+</body>
+</html>
