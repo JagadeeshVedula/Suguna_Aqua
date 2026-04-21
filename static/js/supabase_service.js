@@ -19,11 +19,13 @@ const SupabaseService = {
         try {
             const today = new Date().toISOString().split('T')[0];
             const { data: dashData } = await _supabase.from('DASHBOARD').select('*').order('DATE', { ascending: false }).order('id', { ascending: false }).limit(1);
-            let metrics = { OPENING_BALANCE: 0, OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 }, CASH_OPENING: 0 };
+            
+            let metrics = { OPENING_BALANCE: 0, OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 }, CASH_SNAPSHOT: 0, SNAPSHOT_DATE: '1900-01-01 00:00:00' };
             if (dashData && dashData.length > 0) {
                 const row = dashData[0];
                 metrics.OPENING_BALANCE = parseInt(row.OPENING_BALANCE || 0);
-                metrics.CASH_OPENING = parseFloat(row.CASH_ON_HAND || 0);
+                metrics.CASH_SNAPSHOT = parseFloat(row.CASH_ON_HAND || 0);
+                metrics.SNAPSHOT_DATE = row.DATE;
                 Object.keys(metrics.OPENING_DETAILS).forEach(k => { metrics.OPENING_DETAILS[k] = parseInt(row[k] || 0); });
             }
 
@@ -50,12 +52,13 @@ const SupabaseService = {
                 });
             });
 
-            const { data: cashRecs } = await _supabase.from('CASH').select('CASH_RECEIVED').gte('DATE', today + ' 00:00:00');
-            let todayCash = (cashRecs || []).reduce((acc, row) => acc + parseFloat(row.CASH_RECEIVED || 0), 0);
+            // Cumulative Cash Balance: Snapshot + Transactions after snapshot
+            const { data: newCashRecs } = await _supabase.from('CASH').select('CASH_RECEIVED').gt('DATE', metrics.SNAPSHOT_DATE);
+            let additionalCash = (newCashRecs || []).reduce((acc, row) => acc + parseFloat(row.CASH_RECEIVED || 0), 0);
             
-            const { data: ledgerData } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('CREDIT, DEBIT').gte('DATE', today + ' 00:00:00');
-            let ledgerCredit = (ledgerData || []).reduce((acc, row) => acc + parseFloat(row.CREDIT || 0), 0);
-            let ledgerDebit = (ledgerData || []).reduce((acc, row) => acc + parseFloat(row.DEBIT || 0), 0);
+            const { data: newLedgerData } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('CREDIT, DEBIT').gt('DATE', metrics.SNAPSHOT_DATE);
+            let ledgerCredit = (newLedgerData || []).reduce((acc, row) => acc + parseFloat(row.CREDIT || 0), 0);
+            let ledgerDebit = (newLedgerData || []).reduce((acc, row) => acc + parseFloat(row.DEBIT || 0), 0);
 
             let stockDetails = {};
             Object.keys(prodDetails).forEach(k => { stockDetails[k] = metrics.OPENING_DETAILS[k] + prodDetails[k] - salesDetails[k]; });
@@ -65,7 +68,7 @@ const SupabaseService = {
                 PRODUCTION: prodTotal, PROD_DETAILS: prodDetails,
                 SALES: salesTotal, SALES_DETAILS: salesDetails,
                 STOCK: metrics.OPENING_BALANCE + prodTotal - salesTotal, STOCK_DETAILS: stockDetails,
-                CASH_ON_HAND: metrics.CASH_OPENING + todayCash + ledgerCredit - ledgerDebit
+                CASH_ON_HAND: metrics.CASH_SNAPSHOT + additionalCash + ledgerCredit - ledgerDebit
             };
         } catch (e) {
             console.error("METRICS ERROR", e);
@@ -73,6 +76,30 @@ const SupabaseService = {
             return { OPENING_BALANCE: 0, OPENING_DETAILS: v, PRODUCTION: 0, PROD_DETAILS: v, SALES: 0, SALES_DETAILS: v, STOCK: 0, STOCK_DETAILS: v, CASH_ON_HAND: 0 };
         }
     },
+
+    async endDayProcess() {
+        try {
+            const metrics = await this.getDashboardMetrics();
+            const today = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+            const payload = {
+                DATE: today,
+                OPENING_BALANCE: metrics.STOCK,
+                CASH_ON_HAND: metrics.CASH_ON_HAND,
+                "250ML": metrics.STOCK_DETAILS["250ML"],
+                "500ML": metrics.STOCK_DETAILS["500ML"],
+                "1LTR": metrics.STOCK_DETAILS["1LTR"],
+                "2LTR": metrics.STOCK_DETAILS["2LTR"],
+                "5LTR": metrics.STOCK_DETAILS["5LTR"],
+                "20LTR": metrics.STOCK_DETAILS["20LTR"],
+                "BAGS": metrics.STOCK_DETAILS["BAGS"]
+            };
+            return await _supabase.from('DASHBOARD').insert([payload]);
+        } catch (e) {
+            console.error("END DAY ERR", e);
+            return { error: e };
+        }
+    },
+
 
     async saveProduction(data) {
         data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
