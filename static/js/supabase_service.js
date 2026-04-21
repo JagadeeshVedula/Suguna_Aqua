@@ -1,4 +1,3 @@
-
 const SUPABASE_URL = "https://mggcskkkricnmkjqdqai.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nZ2Nza2trcmljbm1ranFkcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNjk4MjQsImV4cCI6MjA3ODc0NTgyNH0.Z74XcwusKBcVr82QWU5UxKBRgwyAILwKXiVgyTg5SaQ";
 
@@ -109,7 +108,6 @@ const SupabaseService = {
         }
     },
 
-
     async saveProduction(data) {
         data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
         return await _supabase.from('PRODUCTION').insert([data]);
@@ -199,7 +197,6 @@ const SupabaseService = {
 
     async getDriverDues() {
         try {
-            // Fetch everything and filter in JS to avoid string/number comparison errors in Postgres
             const { data, error } = await _supabase.from('CASH').select('*');
             if (error) throw error;
             return (data || [])
@@ -210,7 +207,7 @@ const SupabaseService = {
                 }));
         } catch(e) { 
             console.error("GET DUES ERR", e);
-            throw e; // Throw so UI can catch and report
+            throw e;
         }
     },
 
@@ -239,7 +236,6 @@ const SupabaseService = {
 
     async paySalary(driverName, baseSalary, dueDeduction, netPaid) {
         try {
-            // 1. Record the salary payment as a DEBIT in ACCOUNT_TRANSACTIONS
             const salaryEntry = {
                 HEAD_NAME: 'Salary',
                 PURPOSE: `Monthly Salary Payment - ${driverName} (Base: ${baseSalary}, Due Ded: ${dueDeduction})`,
@@ -250,13 +246,10 @@ const SupabaseService = {
             };
             const { error: txError } = await _supabase.from('ACCOUNT_TRANSACTIONS').insert([salaryEntry]);
             if (txError) throw txError;
-
-            // 2. Clear the dues for this driver in the CASH table
             if (dueDeduction > 0) {
                 const { error: dueError } = await _supabase.from('CASH').update({ DUE: "0.00" }).eq('DRIVER', driverName);
                 if (dueError) throw dueError;
             }
-
             return { success: true };
         } catch (e) {
             console.error("PAY SALARY ERR", e);
@@ -298,37 +291,15 @@ const SupabaseService = {
         if (type === "All Transactions") {
             const date = specificDate || new Date().toISOString().split('T')[0];
             const pattern = `${date}%`;
-            
             const [cash, prod, ledger] = await Promise.all([
                 _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
                 _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
                 _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT').ilike('DATE', pattern)
             ]);
-
-            let all = [];
-            const prods = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
-
-            (cash.data || []).forEach(r => {
-                let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: `${r.VEHICLE_NO} - ${r.DRIVER}` };
-                prods.forEach(k => row[k] = r[k] || 0);
-                row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.CASH_RECEIVED; row.DUE = r.DUE;
-                all.push(row);
-            });
-
-            (prod.data || []).forEach(r => {
-                let row = { DATE: r.DATE, TYPE: 'PROD', DESCRIPTION: 'Production Entry' };
-                prods.forEach(k => row[k] = r[k] || 0);
-                row.AMOUNT = 0; row.PAID = 0; row.DUE = 0;
-                all.push(row);
-            });
-
-            (ledger.data || []).forEach(r => {
-                let row = { DATE: r.DATE, TYPE: 'LEDG', DESCRIPTION: `${r.HEAD_NAME}: ${r.PURPOSE}` };
-                prods.forEach(k => row[k] = 0);
-                row.AMOUNT = r.DEBIT; row.PAID = r.CREDIT; row.DUE = 0;
-                all.push(row);
-            });
-
+            let all = []; const prods = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+            (cash.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: `${r.VEHICLE_NO} - ${r.DRIVER}` }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.CASH_RECEIVED; row.DUE = r.DUE; all.push(row); });
+            (prod.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'PROD', DESCRIPTION: 'Production Entry' }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = 0; row.PAID = 0; row.DUE = 0; all.push(row); });
+            (ledger.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'LEDG', DESCRIPTION: `${r.HEAD_NAME}: ${r.PURPOSE}` }; prods.forEach(k => row[k] = 0); row.AMOUNT = r.DEBIT; row.PAID = r.CREDIT; row.DUE = 0; all.push(row); });
             return all.sort((a, b) => new Date(a.DATE) - new Date(b.DATE));
         }
 
@@ -359,24 +330,8 @@ const SupabaseService = {
         } else if (type === "Raw Material") {
             const { data } = await _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
             if (!data) return [];
-
-            // data is horizontal (PB_2LTR_R, PB_2LTR_U, etc.)
-            // filter columns based on the 'filter' parameter (received, used, both)
-            const products = [
-                'PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML',
-                'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML',
-                'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW',
-                'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'
-            ];
-
-            return data.map(row => {
-                let r = { DATE: row.DATE };
-                products.forEach(p => {
-                    if (filter === 'Received' || filter === 'Both') r[`${p}_Received`] = row[`${p}_R`] || 0;
-                    if (filter === 'Used' || filter === 'Both') r[`${p}_Used`] = row[`${p}_U`] || 0;
-                });
-                return r;
-            });
+            const products = ['PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML', 'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML', 'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW', 'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'];
+            return data.map(row => { let r = { DATE: row.DATE }; products.forEach(p => { if (filter === 'Received' || filter === 'Both') r[`${p}_Received`] = row[`${p}_R`] || 0; if (filter === 'Used' || filter === 'Both') r[`${p}_Used`] = row[`${p}_U`] || 0; }); return r; });
         }
         return [];
     },
@@ -387,8 +342,7 @@ const SupabaseService = {
         if (!sales) return [];
         for (let d of sales) {
             const dl = dealers.find(x => x.NAME === d.DRIVER) || {};
-            let bill = 0;
-            ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => { bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0)); });
+            let bill = 0; ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => { bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0)); });
             d.TOTAL_AMOUNT = bill;
             const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', String(d.id));
             d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0);
@@ -401,12 +355,37 @@ const SupabaseService = {
         return await this.saveCashEntry(data);
     },
 
+    async getTrendData(startDate, endDate) {
+        try {
+            const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+            const rmItems = ['PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML', 'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML', 'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW', 'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'];
+            const startStr = startDate + " 00:00:00"; const endStr = endDate + " 23:59:59";
+            const [prod, sales, rm] = await Promise.all([
+                _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).lte('DATE', endStr),
+                _supabase.from('CASH').select('*').gte('DATE', startStr).lte('DATE', endStr),
+                _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', startStr).lte('DATE', endStr)
+            ]);
+            const d1 = new Date(startDate); const d2 = new Date(endDate);
+            const days = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1);
+            const averages = { production: {}, sales: {}, rm: {}, dayCount: days };
+            products.forEach(p => { averages.production[p] = (((prod.data || []).reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); });
+            products.forEach(p => { averages.sales[p] = (((sales.data || []).reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); });
+            rmItems.forEach(k => { averages.rm[k] = { received: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_R`] || 0), 0)) / days).toFixed(1), used: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_U`] || 0), 0)) / days).toFixed(1) }; });
+            return averages;
+        } catch (e) { console.error("TREND DATA ERR", e); return null; }
+    },
+
     exportToCSV(data, filename) {
         if (!data || !data.length) return;
-        const csv = [Object.keys(data[0]).join(','), ...data.map(row => Object.values(row).join(','))].join('\n');
+        const headers = Object.keys(data[0]);
+        const csvContent = [headers.join(','), ...data.map(row => headers.map(fieldName => `"${row[fieldName] || ''}"`).join(','))].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
-        link.download = filename + ".csv";
-        link.click();
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url); link.setAttribute("download", `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden'; document.body.appendChild(link);
+            link.click(); document.body.removeChild(link);
+        }
     }
 };

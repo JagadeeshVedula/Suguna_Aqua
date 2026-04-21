@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase Library -->
+    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js for Trend Analysis -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="static/js/supabase_service.js"></script>
 </head>
 
@@ -43,6 +46,7 @@
                 <li class="nav-item" onclick="showSection('sales', this)">Sales</li>
                 <li class="nav-item" onclick="showSection('ledger', this)">Account Ledger</li>
                 <li class="nav-item" onclick="showSection('reports', this)">Reports</li>
+                <li class="nav-item" onclick="showSection('trend-analysis', this)">Trend Analysis</li>
             </ul>
         </header>
     </div>
@@ -565,6 +569,53 @@
                 </div>
             </div>
         </section>
+
+        <!-- Trend Analysis Section -->
+        <section id="trend-analysis" class="page-section">
+            <div class="glass-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                    <div>
+                        <h2 style="font-size: 2.2rem; color: var(--accent); margin: 0;">Trend Analysis</h2>
+                        <span id="trendDayIndicator" style="font-size: 0.9rem; opacity: 0.5; color: #fff;">(Calculated over 30 days)</span>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <input type="date" id="trendStart" class="report-select" style="min-width: 150px;">
+                        <span style="color: rgba(255,255,255,0.5);">to</span>
+                        <input type="date" id="trendEnd" class="report-select" style="min-width: 150px;">
+                        <button class="action-btn" onclick="initTrendAnalysis()"><i class="fas fa-sync"></i> Update</button>
+                    </div>
+                </div>
+
+                <div class="tile-grid">
+                    <!-- Production Trends -->
+                    <div class="tile" style="min-height: 350px;">
+                        <h3 style="margin-bottom:1.5rem; color:var(--primary); font-size:1.1rem;">Production Averages</h3>
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex: 2;"><canvas id="trendProdChart"></canvas></div>
+                            <div id="trendProdNumbers" class="trend-number-panel"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Trends -->
+                    <div class="tile" style="min-height: 350px;">
+                        <h3 style="margin-bottom:1.5rem; color:var(--accent); font-size:1.1rem;">Sales Averages</h3>
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex: 2;"><canvas id="trendSalesChart"></canvas></div>
+                            <div id="trendSalesNumbers" class="trend-number-panel"></div>
+                        </div>
+                    </div>
+
+                    <!-- RM Trends -->
+                    <div class="tile" style="min-height: 450px; grid-column: 1 / -1;">
+                        <h3 style="margin-bottom:1.5rem; color:var(--accent); font-size:1.1rem;">Raw Material Consumption Trends</h3>
+                        <div style="display: flex; gap: 40px;">
+                            <div style="flex: 3;"><canvas id="trendRMChart"></canvas></div>
+                            <div id="trendRMNumbers" class="trend-number-panel" style="flex: 1; columns: 2;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -669,6 +720,108 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
             if (id === 'sales') loadSettlements();
             if (id === 'dashboard') refreshDashboard();
+            if (id === 'trend-analysis') initTrendAnalysis();
+        }
+
+        let trendCharts = {};
+        async function initTrendAnalysis() {
+            const endInput = document.getElementById('trendEnd');
+            const startInput = document.getElementById('trendStart');
+            
+            if (!endInput.value) endInput.value = new Date().toISOString().split('T')[0];
+            if (!startInput.value) startInput.value = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            const res = await SupabaseService.getTrendData(startInput.value, endInput.value);
+            if (!res) return;
+
+            document.getElementById('trendDayIndicator').innerText = `(Daily Avg calculated over ${res.dayCount} day${res.dayCount > 1 ? 's' : ''})`;
+
+            // Destroy existing charts to prevent memory leaks/overlap
+            Object.values(trendCharts).forEach(c => c.destroy());
+
+            // Helper to render numbers
+            const showNums = (id, data, isRM = false) => {
+                const el = document.getElementById(id);
+                if (isRM) {
+                    el.innerHTML = Object.entries(data).map(([k, v]) => `
+                        <div style="margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                            <div style="font-size:0.75rem; opacity:0.5; color:#fff;">${k.replace(/_/g,' ')}</div>
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span style="color:#48cae4;">R: ${v.received}</span>
+                                <span style="color:#ff595e;">U: ${v.used}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    el.innerHTML = Object.entries(data).map(([k, v]) => `
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; font-size:0.9rem;">
+                            <span style="opacity:0.6;">${k}</span>
+                            <span style="font-weight:700; color:var(--accent); border-radius:4px;">${v}</span>
+                        </div>
+                    `).join('');
+                }
+            };
+
+            showNums('trendProdNumbers', res.production);
+            showNums('trendSalesNumbers', res.sales);
+            showNums('trendRMNumbers', res.rm, true);
+
+            // Production Chart
+            trendCharts.prod = new Chart(document.getElementById('trendProdChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(res.production),
+                    datasets: [{
+                        label: 'Daily Avg Production',
+                        data: Object.values(res.production),
+                        backgroundColor: 'rgba(0, 245, 160, 0.6)',
+                        borderColor: '#00f5a0',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            // Sales Chart
+            trendCharts.sales = new Chart(document.getElementById('trendSalesChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(res.sales),
+                    datasets: [{
+                        label: 'Daily Avg Sales',
+                        data: Object.values(res.sales),
+                        backgroundColor: 'rgba(251, 140, 0, 0.6)',
+                        borderColor: '#fb8c00',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            // RM Chart
+            trendCharts.rm = new Chart(document.getElementById('trendRMChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(res.rm).map(k => k.replace(/_/g, ' ')),
+                    datasets: [
+                        {
+                            label: 'Avg Received',
+                            data: Object.values(res.rm).map(v => v.received),
+                            backgroundColor: 'rgba(72, 202, 228, 0.6)',
+                            borderColor: '#48cae4',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Avg Used',
+                            data: Object.values(res.rm).map(v => v.used),
+                            backgroundColor: 'rgba(255, 89, 94, 0.6)',
+                            borderColor: '#ff595e',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
         }
 
         function toggleSalesSub(id, btn) {

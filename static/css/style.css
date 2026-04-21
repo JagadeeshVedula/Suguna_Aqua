@@ -1026,6 +1026,15 @@ select option {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.trend-number-panel {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+}
+
 @keyframes settleReveal {
     from {
         opacity: 0;
