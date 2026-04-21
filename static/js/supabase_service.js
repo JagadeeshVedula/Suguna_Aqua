@@ -386,9 +386,10 @@ const SupabaseService = {
             const { data } = await _supabase.from('SALES').select('*').eq('TYPE', 'COUNTER').gte('DATE', startStr).lte('DATE', endStr).order('DATE', { ascending: false });
             return (data || []).map(r => { delete r.id; delete r.TYPE; return r; });
         } else if (type === "Dues Report") {
-            const [driver, salesDues] = await Promise.all([
+            const [driver, salesDues, dealers] = await Promise.all([
                 _supabase.from('CASH').select('*'),
-                _supabase.from('SALES').select('*')
+                _supabase.from('SALES').select('*'),
+                _supabase.from('DEALERS').select('*')
             ]);
 
             const allDues = [];
@@ -403,11 +404,20 @@ const SupabaseService = {
                 if (r.TYPE === 'LINE') return;
                 const category = r.TYPE || 'DEALER';
                 const name = r.CUSTOMER_NAME || r.DRIVER || 'Unknown';
-                let dueVal = parseFloat(r.DUE || 0);
                 
-                // Fallback math if DUE column is zero but total > paid
-                if (dueVal <= 0) {
-                    dueVal = parseFloat(r.TOTAL_AMOUNT || 0) - parseFloat(r.PAID_AMOUNT || 0);
+                let tot = parseFloat(r.TOTAL_AMOUNT || 0);
+                // Fallback for bill calculation if missing
+                if (tot <= 0 && r.TYPE === 'DEALER') {
+                    const dl = (dealers.data || []).find(x => x.NAME === r.DRIVER) || {};
+                    const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+                    products.forEach(k => {
+                        tot += (parseInt(r[k] || 0) * parseFloat(dl[`PR_${k}`] || 0));
+                    });
+                }
+
+                let dueVal = parseFloat(r.DUE || 0);
+                if (dueVal <= 0 && tot > 0) {
+                    dueVal = tot - parseFloat(r.PAID_AMOUNT || 0);
                 }
 
                 if (dueVal > 0) {
