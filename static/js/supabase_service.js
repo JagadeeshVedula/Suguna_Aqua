@@ -416,18 +416,28 @@ const SupabaseService = {
             let q1 = _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS');
             let q2 = _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS');
             let q3 = _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT');
+            let q4 = _supabase.from('SALES').select('*').in('TYPE', ['DEALER', 'COUNTER']);
 
             if (customRange?.start && customRange?.end) {
                 q1 = q1.gte('DATE', startStr).lte('DATE', endStr);
                 q2 = q2.gte('DATE', startStr).lte('DATE', endStr);
                 q3 = q3.gte('DATE', startStr).lte('DATE', endStr);
+                q4 = q4.gte('DATE', startStr).lte('DATE', endStr);
             } else {
-                q1 = q1.ilike('DATE', pattern); q2 = q2.ilike('DATE', pattern); q3 = q3.ilike('DATE', pattern);
+                q1 = q1.ilike('DATE', pattern); q2 = q2.ilike('DATE', pattern); q3 = q3.ilike('DATE', pattern); q4 = q4.ilike('DATE', pattern);
             }
 
-            const [cash, prod, ledger] = await Promise.all([q1, q2, q3]);
+            const [cash, prod, ledger, sales] = await Promise.all([q1, q2, q3, q4]);
             let all = []; const prods = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
             (cash.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: `${r.VEHICLE_NO} - ${r.DRIVER}` }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.CASH_RECEIVED; row.DUE = r.DUE; all.push(row); });
+            (sales.data || []).forEach(r => { 
+                let desc = r.TYPE === 'DEALER' ? `Dealer Dispatch - ${r.DRIVER}` : `Counter Sale - ${r.DRIVER}`;
+                let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: desc }; 
+                prods.forEach(k => row[k] = r[k] || 0); 
+                row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.PAID_AMOUNT; 
+                row.DUE = parseFloat(r.TOTAL_AMOUNT || 0) - parseFloat(r.PAID_AMOUNT || 0);
+                all.push(row); 
+            });
             (prod.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'PROD', DESCRIPTION: 'Production Entry' }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = 0; row.PAID = 0; row.DUE = 0; all.push(row); });
             (ledger.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'LEDG', DESCRIPTION: `${r.HEAD_NAME}: ${r.PURPOSE}` }; prods.forEach(k => row[k] = 0); row.AMOUNT = r.DEBIT; row.PAID = r.CREDIT; row.DUE = 0; all.push(row); });
             return all.sort((a, b) => new Date(a.DATE) - new Date(b.DATE));
@@ -462,6 +472,11 @@ const SupabaseService = {
             return (data || []).filter(row => parseFloat(row.DUE || 0) > 0);
         } else if (type === "Counter Sales") {
             const { data } = await _supabase.from('SALES').select('*').eq('TYPE', 'COUNTER').gte('DATE', startStr).lte('DATE', endStr).order('DATE', { ascending: false });
+            return (data || []).map(r => { delete r.id; delete r.TYPE; return r; });
+        } else if (type === "Dealer Sales") {
+            let q = _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', startStr).lte('DATE', endStr);
+            if (filter && filter !== 'All Dealers') q = q.eq('DRIVER', filter);
+            const { data } = await q.order('DATE', { ascending: false });
             return (data || []).map(r => { delete r.id; delete r.TYPE; return r; });
         } else if (type === "Dues Report") {
             const [driver, salesDues, dealers] = await Promise.all([
