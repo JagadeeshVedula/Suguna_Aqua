@@ -1480,11 +1480,19 @@
         async function fetchDealerLedger() {
             const date = document.getElementById('ledgerDate').value;
             if (!date) return;
-            const data = await SupabaseService.fetchDealerDispatches(date);
             const content = document.getElementById('ledgerContent');
-            if (!data.length) { content.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:3rem;">No dispatches found.</td></tr>'; return; }
-            content.innerHTML = data.map(d => {
-                const pending = (parseFloat(d.TOTAL_AMOUNT || 0) - d.PAID_AMOUNT);
+            
+            // Show loading state immediately
+            content.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:3rem;"><i class="fas fa-spinner fa-spin"></i> Loading Ledger Details...</td></tr>';
+            
+            try {
+                const data = await SupabaseService.fetchDealerDispatches(date);
+                if (!data || !data.length) { 
+                    content.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:3rem;">No dispatches found for this date.</td></tr>'; 
+                    return; 
+                }
+                content.innerHTML = data.map(d => {
+                const pending = (parseFloat(d.TOTAL_AMOUNT || 0) - (parseFloat(d.PAID_AMOUNT || 0)));
                 const isPaid = pending <= 0.01;
                 return `
                 <tr>
@@ -1497,8 +1505,8 @@
                     <td>${d["5LTR"] || 0}</td>
                     <td>${d["20LTR"] || 0}</td>
                     <td>${d["BAGS"] || 0}</td>
-                    <td>₹${(d.TOTAL_AMOUNT || 0).toFixed(2)}</td>
-                    <td style="color:#00f5a0;">₹${(d.PAID_AMOUNT || 0).toFixed(2)}</td>
+                    <td>₹${parseFloat(d.TOTAL_AMOUNT || 0).toFixed(2)}</td>
+                    <td style="color:#00f5a0;">₹${parseFloat(d.PAID_AMOUNT || 0).toFixed(2)}</td>
                     <td style="color:var(--accent); font-weight:700;">₹${Math.max(0, pending).toFixed(2)}</td>
                     <td style="text-align: center;">
                         ${isPaid ? `
@@ -1507,7 +1515,7 @@
                             <div style="display: flex; gap: 5px; justify-content: center; align-items:center;">
                                 <input type="number" id="pay_${d.id}" value="${pending.toFixed(2)}" step="0.01" 
                                     style="width: 80px; padding: 5px; font-size: 0.8rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;">
-                                <button onclick="processPayment('${d.id}', '${d.DRIVER}', ${d.TOTAL_AMOUNT})" class="add-mini-btn" style="padding: 5px 10px; height: 30px;">
+                                <button onclick="processPayment('${d.id}', '${d.DRIVER}', ${parseFloat(d.TOTAL_AMOUNT || 0)})" class="add-mini-btn" style="padding: 5px 10px; height: 30px;">
                                     <i class="fas fa-check"></i>
                                 </button>
                             </div>
@@ -1515,6 +1523,10 @@
                     </td>
                 </tr>
             `}).join('');
+            } catch (err) {
+                console.error("Ledger Error:", err);
+                content.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:3rem; color: #ff4d4d;">Error loading ledger: ${err.message}</td></tr>`;
+            }
         }
 
         async function processPayment(id, name, total) {
@@ -1625,7 +1637,11 @@
                 }
 
                 const rawKeys = Object.keys(data[0]);
-                const keys = rawKeys.filter(k => k !== 'id' && k !== 'SALES_ID' && k !== 'DUE');
+                const keys = rawKeys.filter(k => {
+                    if (k === 'id' || k === 'SALES_ID') return false;
+                    if (k === 'DUE' && (type !== 'Driver Dues' && type !== 'Dues Report')) return false;
+                    return true;
+                });
                 tableHeader.innerHTML = `<tr>${keys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
                 tableBody.innerHTML = data.map(r => `<tr>${keys.map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('');
             } catch (err) {
@@ -1713,6 +1729,7 @@
                 d.QUANTITY = totalQty;
                 d.TOTAL_AMOUNT = parseFloat(document.getElementById('dealerTotalAmount').innerText || 0);
                 d.PAID_AMOUNT = parseFloat(document.getElementById('dealerAmountPaid').value || 0);
+                d.DUE = d.TOTAL_AMOUNT - d.PAID_AMOUNT;
                 d.TYPE = "DEALER";
 
                 const res = await SupabaseService.saveSales(d);

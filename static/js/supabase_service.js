@@ -130,6 +130,20 @@ const SupabaseService = {
 
         data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
         const { data: resp, error } = await _supabase.from('SALES').insert([data]).select();
+        
+        if (!error && resp && resp.length > 0) {
+            const saved = resp[0];
+            if ((data.TYPE === 'DEALER' || data.TYPE === 'COUNTER') && parseFloat(data.PAID_AMOUNT || 0) > 0) {
+                await this.saveCashEntry({
+                    VEHICLE_NO: data.TYPE === 'DEALER' ? 'DEALER_PAYMENT' : 'COUNTER_PAYMENT',
+                    DRIVER: data.DRIVER || data.CUSTOMER_NAME,
+                    total_amount: data.TOTAL_AMOUNT,
+                    cash_received: data.PAID_AMOUNT,
+                    paid_by_customer: data.PAID_AMOUNT,
+                    SALES_ID: String(saved.id)
+                });
+            }
+        }
         return { success: !error, id: resp ? resp[0].id : null, error, merged: false };
     },
 
@@ -138,18 +152,18 @@ const SupabaseService = {
             DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' '),
             VEHICLE_NO: data.VEHICLE_NO || data.vehicle_no,
             DRIVER: data.DRIVER || data.driver,
-            TOTAL_AMOUNT: parseFloat(data.total_amount || 0),
-            PAID_BY_CUSTOMER: parseFloat(data.paid_by_customer || 0),
-            EXPENSES: parseFloat(data.expenses || 0),
-            CASH_RECEIVED: parseFloat(data.cash_received || 0),
-            SALES_ID: String(data.SALES_ID),
+            TOTAL_AMOUNT: parseFloat(data.TOTAL_AMOUNT || data.total_amount || 0),
+            PAID_BY_CUSTOMER: parseFloat(data.PAID_BY_CUSTOMER || data.paid_by_customer || 0),
+            EXPENSES: parseFloat(data.EXPENSES || data.expenses || 0),
+            CASH_RECEIVED: parseFloat(data.CASH_RECEIVED || data.cash_received || 0),
+            SALES_ID: String(data.SALES_ID || data.sales_id),
             "250ML": parseInt(data["250ML"] || data["250ml"] || 0),
             "500ML": parseInt(data["500ML"] || data["500ml"] || 0),
             "1LTR": parseInt(data["1LTR"] || data["1ltr"] || 0),
             "2LTR": parseInt(data["2LTR"] || data["2ltr"] || 0), 
             "5LTR": parseInt(data["5LTR"] || data["5ltr"] || 0),
             "20LTR": parseInt(data["20LTR"] || data["20ltr"] || 0),
-            "BAGS": parseInt(data["BAGS"] || data["bags"] || 0)
+            "BAGS": parseInt(data.BAGS || data.bags || 0)
         };
         
         // Capture rates (prices) for the summary entry
@@ -373,18 +387,32 @@ const SupabaseService = {
             return (data || []).map(r => { delete r.id; delete r.TYPE; return r; });
         } else if (type === "Dues Report") {
             const [driver, salesDues] = await Promise.all([
-                _supabase.from('CASH').select('DATE, DRIVER, VEHICLE_NO, DUE').gt('DUE', 0),
-                _supabase.from('SALES').select('DATE, TYPE, CUSTOMER_NAME, DRIVER, TOTAL_AMOUNT, PAID_AMOUNT, DUE').gt('DUE', 0)
+                _supabase.from('CASH').select('*'),
+                _supabase.from('SALES').select('*')
             ]);
 
-            // Combine into unified dues list
             const allDues = [];
-            (driver.data || []).forEach(r => allDues.push({ DATE: r.DATE, CATEGORY: 'DRIVER', NAME: `${r.DRIVER} (${r.VEHICLE_NO})`, DUE: r.DUE }));
+            (driver.data || []).forEach(r => {
+                const dAmt = parseFloat(r.DUE || 0);
+                if (dAmt > 0) {
+                    allDues.push({ DATE: r.DATE, CATEGORY: 'DRIVER', NAME: `${r.DRIVER} (${r.VEHICLE_NO})`, DUE: dAmt });
+                }
+            });
             
             (salesDues.data || []).forEach(r => {
-                const category = r.TYPE === 'COUNTER' ? 'COUNTER' : 'DEALER';
-                const name = r.CUSTOMER_NAME || r.DRIVER;
-                allDues.push({ DATE: r.DATE, CATEGORY: category, NAME: name, DUE: r.DUE });
+                if (r.TYPE === 'LINE') return;
+                const category = r.TYPE || 'DEALER';
+                const name = r.CUSTOMER_NAME || r.DRIVER || 'Unknown';
+                let dueVal = parseFloat(r.DUE || 0);
+                
+                // Fallback math if DUE column is zero but total > paid
+                if (dueVal <= 0) {
+                    dueVal = parseFloat(r.TOTAL_AMOUNT || 0) - parseFloat(r.PAID_AMOUNT || 0);
+                }
+
+                if (dueVal > 0) {
+                    allDues.push({ DATE: r.DATE, CATEGORY: category, NAME: name, DUE: dueVal });
+                }
             });
             
             return allDues.sort((a,b) => new Date(b.DATE) - new Date(a.DATE));
@@ -437,21 +465,49 @@ const SupabaseService = {
 
     async fetchDealerDispatches(date) {
         const { data: sales } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').ilike('DATE', `${date}%`).order('DATE', { ascending: false });
-        const { data: dealers } = await _supabase.from('DEALERS').select('*');
         if (!sales) return [];
+        
+        // Fetch dealers for fallback price calculation if TOTAL_AMOUNT is missing (legacy records)
+        const { data: dealers } = await _supabase.from('DEALERS').select('*');
+        
         for (let d of sales) {
-            const dl = dealers.find(x => x.NAME === d.DRIVER) || {};
-            let bill = 0; ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => { bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0)); });
-            d.TOTAL_AMOUNT = bill;
             const { data: cash } = await _supabase.from('CASH').select('PAID_BY_CUSTOMER').eq('SALES_ID', String(d.id));
-            d.PAID_AMOUNT = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0);
+            const cashSum = (cash || []).reduce((acc, row) => acc + parseFloat(row.PAID_BY_CUSTOMER || 0), 0);
+            d.PAID_AMOUNT = cashSum;
+
+            // Fallback for older records where TOTAL_AMOUNT wasn't recorded at save-time
+            if (!d.TOTAL_AMOUNT || parseFloat(d.TOTAL_AMOUNT) === 0) {
+                const dl = (dealers || []).find(x => x.NAME === d.DRIVER) || {};
+                let bill = 0;
+                ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                    bill += (parseInt(d[k] || 0) * parseFloat(dl[`PR_${k}`] || 0));
+                });
+                d.TOTAL_AMOUNT = bill;
+            }
         }
         return sales;
     },
 
     async updateDealerPayment(sales_id, dealer_name, total_amount, amount_paid) {
-        const data = { VEHICLE_NO: "DEALER_PAYMENT", DRIVER: dealer_name, TOTAL_AMOUNT: total_amount, PAID_BY_CUSTOMER: amount_paid, EXPENSES: 0, CASH_RECEIVED: amount_paid, SALES_ID: String(sales_id) };
-        return await this.saveCashEntry(data);
+        const cashPayload = { 
+            VEHICLE_NO: "DEALER_PAYMENT", 
+            DRIVER: dealer_name, 
+            TOTAL_AMOUNT: total_amount, 
+            PAID_BY_CUSTOMER: amount_paid, 
+            CASH_RECEIVED: amount_paid, 
+            SALES_ID: String(sales_id) 
+        };
+        const res = await this.saveCashEntry(cashPayload);
+        
+        // Synchronize Sales table totals using exact ID match
+        const sid = Number(sales_id);
+        const { data: salesRow } = await _supabase.from('SALES').select('PAID_AMOUNT, TOTAL_AMOUNT').eq('id', sid).single();
+        if (salesRow) {
+            const newPaid = parseFloat(salesRow.PAID_AMOUNT || 0) + amount_paid;
+            const newDue = parseFloat(salesRow.TOTAL_AMOUNT || 0) - newPaid;
+            await _supabase.from('SALES').update({ PAID_AMOUNT: newPaid, DUE: newDue }).eq('id', sid);
+        }
+        return res;
     },
 
     async getTrendData(startDate, endDate) {
