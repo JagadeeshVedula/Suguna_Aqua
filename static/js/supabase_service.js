@@ -167,6 +167,14 @@ const SupabaseService = {
         return await _supabase.from('RAW_MATERIAL_TX').insert([data]);
     },
 
+    async saveCounterSale(data) {
+        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.TYPE = 'COUNTER';
+        // Map CUSTOMER_NAME to DRIVER field for consistency with existing report filters if needed
+        data.DRIVER = data.CUSTOMER_NAME; 
+        return await _supabase.from('SALES').insert([data]);
+    },
+
     async getRawMaterialMetrics() {
         try {
             const today = new Date().toISOString().split('T')[0];
@@ -295,21 +303,37 @@ const SupabaseService = {
         return await _supabase.from('ACCOUNT_TRANSACTIONS').insert([data]);
     },
 
-    async getReportData(type, timeframe, filter, specificDate) {
+    async getReportData(type, timeframe, filter, specificDate, customRange) {
         let start = new Date();
         if (timeframe === 'daily') start.setHours(0, 0, 0, 0);
         else if (timeframe === 'weekly') start.setDate(start.getDate() - 7);
         else if (timeframe === 'monthly') start.setDate(start.getDate() - 30);
-        const startStr = start.toISOString().split('T')[0] + " 00:00:00";
+        
+        let startStr = start.toISOString().split('T')[0] + " 00:00:00";
+        let endStr = new Date().toISOString().split('T')[0] + " 23:59:59";
+
+        if (customRange && customRange.start && customRange.end) {
+            startStr = customRange.start + " 00:00:00";
+            endStr = customRange.end + " 23:59:59";
+        }
 
         if (type === "All Transactions") {
             const date = specificDate || new Date().toISOString().split('T')[0];
             const pattern = `${date}%`;
-            const [cash, prod, ledger] = await Promise.all([
-                _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
-                _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS').ilike('DATE', pattern),
-                _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT').ilike('DATE', pattern)
-            ]);
+            
+            let q1 = _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS');
+            let q2 = _supabase.from('PRODUCTION').select('DATE, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS');
+            let q3 = _supabase.from('ACCOUNT_TRANSACTIONS').select('DATE, HEAD_NAME, PURPOSE, CREDIT, DEBIT');
+
+            if (customRange?.start && customRange?.end) {
+                q1 = q1.gte('DATE', startStr).lte('DATE', endStr);
+                q2 = q2.gte('DATE', startStr).lte('DATE', endStr);
+                q3 = q3.gte('DATE', startStr).lte('DATE', endStr);
+            } else {
+                q1 = q1.ilike('DATE', pattern); q2 = q2.ilike('DATE', pattern); q3 = q3.ilike('DATE', pattern);
+            }
+
+            const [cash, prod, ledger] = await Promise.all([q1, q2, q3]);
             let all = []; const prods = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
             (cash.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'SALE', DESCRIPTION: `${r.VEHICLE_NO} - ${r.DRIVER}` }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = r.TOTAL_AMOUNT; row.PAID = r.CASH_RECEIVED; row.DUE = r.DUE; all.push(row); });
             (prod.data || []).forEach(r => { let row = { DATE: r.DATE, TYPE: 'PROD', DESCRIPTION: 'Production Entry' }; prods.forEach(k => row[k] = r[k] || 0); row.AMOUNT = 0; row.PAID = 0; row.DUE = 0; all.push(row); });
@@ -318,10 +342,10 @@ const SupabaseService = {
         }
 
         if (type === "Production") {
-            const { data } = await _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
+            const { data } = await _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).lte('DATE', endStr).order('DATE', { ascending: false });
             return (data || []).map(r => { delete r.id; return r; });
         } else if (type === "Sales") {
-            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr);
+            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr).lte('DATE', endStr);
             if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
             const { data } = await q.order('DATE', { ascending: false });
             return (data || []).map(r => {
@@ -329,21 +353,79 @@ const SupabaseService = {
                 return r;
             });
         } else if (type === "Detailed Line Sales") {
-            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr);
+            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr).lte('DATE', endStr);
             if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
             const { data } = await q.order('DATE', { ascending: false });
             return (data || []).map(r => { delete r.id; delete r.SALES_ID; return r; });
         } else if (type === "Account Ledger") {
-            let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('*').gte('DATE', startStr);
+            let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('*').gte('DATE', startStr).lte('DATE', endStr);
             if (filter && filter !== "All Heads") q = q.eq('HEAD_NAME', filter);
             const { data } = await q.order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Salary") {
-            const { data } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('*').eq('HEAD_NAME', 'Salary').gte('DATE', startStr).order('DATE', { ascending: false });
+            const { data } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('*').eq('HEAD_NAME', 'Salary').gte('DATE', startStr).lte('DATE', endStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Driver Dues") {
             const { data } = await _supabase.from('CASH').select('*').order('DATE', { ascending: false });
             return (data || []).filter(row => parseFloat(row.DUE || 0) > 0);
+        } else if (type === "Counter Sales") {
+            const { data } = await _supabase.from('SALES').select('*').eq('TYPE', 'COUNTER').gte('DATE', startStr).lte('DATE', endStr).order('DATE', { ascending: false });
+            return (data || []).map(r => { delete r.id; delete r.TYPE; return r; });
+        } else if (type === "Dues Report") {
+            const [driver, salesDues] = await Promise.all([
+                _supabase.from('CASH').select('DATE, DRIVER, VEHICLE_NO, DUE').gt('DUE', 0),
+                _supabase.from('SALES').select('DATE, TYPE, CUSTOMER_NAME, DRIVER, TOTAL_AMOUNT, PAID_AMOUNT, DUE').gt('DUE', 0)
+            ]);
+
+            // Combine into unified dues list
+            const allDues = [];
+            (driver.data || []).forEach(r => allDues.push({ DATE: r.DATE, CATEGORY: 'DRIVER', NAME: `${r.DRIVER} (${r.VEHICLE_NO})`, DUE: r.DUE }));
+            
+            (salesDues.data || []).forEach(r => {
+                const category = r.TYPE === 'COUNTER' ? 'COUNTER' : 'DEALER';
+                const name = r.CUSTOMER_NAME || r.DRIVER;
+                allDues.push({ DATE: r.DATE, CATEGORY: category, NAME: name, DUE: r.DUE });
+            });
+            
+            return allDues.sort((a,b) => new Date(b.DATE) - new Date(a.DATE));
+        } else if (type === "Average Analysis") {
+            const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+            const start = customRange?.start || specificDate;
+            const end = customRange?.end || specificDate;
+            if(!start || !end) return [{ ERROR: "Please select From and To dates" }];
+
+            const startStr = start + " 00:00:00"; const endStr = end + " 23:59:59";
+            let q;
+            const actorKey = filter.type === 'DRIVER' ? 'VEHICLE_NO' : 'DRIVER';
+            if (filter.type === 'DRIVER') {
+                q = _supabase.from('CASH').select('*').gte('DATE', startStr).lte('DATE', endStr);
+                if (filter.name !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter.name);
+            } else {
+                q = _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', startStr).lte('DATE', endStr);
+                if (filter.name !== 'All Dealers') q = q.eq('DRIVER', filter.name);
+            }
+
+            const { data } = await q;
+            const d1 = new Date(start); const d2 = new Date(end);
+            const days = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1);
+            
+            // Group data by actor
+            const groups = {};
+            (data || []).forEach(r => {
+                const name = r[actorKey];
+                if (!groups[name]) groups[name] = { NAME: name, PERIOD: `${start} to ${end}`, DAYS: days, totals: {} };
+                products.forEach(p => {
+                    groups[name].totals[p] = (groups[name].totals[p] || 0) + parseInt(r[p] || 0);
+                });
+            });
+
+            return Object.values(groups).map(g => {
+                const row = { NAME: g.NAME, PERIOD: g.PERIOD, DAYS: g.DAYS };
+                products.forEach(p => {
+                    row[`AVG_${p}`] = ((g.totals[p] || 0) / days).toFixed(1);
+                });
+                return row;
+            });
         } else if (type === "Raw Material") {
             const { data } = await _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
             if (!data) return [];
@@ -377,17 +459,35 @@ const SupabaseService = {
             const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
             const rmItems = ['PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML', 'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML', 'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW', 'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'];
             const startStr = startDate + " 00:00:00"; const endStr = endDate + " 23:59:59";
-            const [prod, sales, rm] = await Promise.all([
+            
+            const [prod, lineSales, dealerSales, rm] = await Promise.all([
                 _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).lte('DATE', endStr),
                 _supabase.from('CASH').select('*').gte('DATE', startStr).lte('DATE', endStr),
+                _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', startStr).lte('DATE', endStr),
                 _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', startStr).lte('DATE', endStr)
             ]);
+
             const d1 = new Date(startDate); const d2 = new Date(endDate);
             const days = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1);
+            
+            const allSales = [...(lineSales.data || []), ...(dealerSales.data || [])];
             const averages = { production: {}, sales: {}, rm: {}, dayCount: days };
-            products.forEach(p => { averages.production[p] = (((prod.data || []).reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); });
-            products.forEach(p => { averages.sales[p] = (((sales.data || []).reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); });
-            rmItems.forEach(k => { averages.rm[k] = { received: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_R`] || 0), 0)) / days).toFixed(1), used: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_U`] || 0), 0)) / days).toFixed(1) }; });
+            
+            products.forEach(p => { 
+                averages.production[p] = (((prod.data || []).reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); 
+            });
+            
+            products.forEach(p => { 
+                averages.sales[p] = ((allSales.reduce((sum, row) => sum + parseInt(row[p] || 0), 0)) / days).toFixed(1); 
+            });
+            
+            rmItems.forEach(k => { 
+                averages.rm[k] = { 
+                    received: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_R`] || 0), 0)) / days).toFixed(1), 
+                    used: (((rm.data || []).reduce((sum, row) => sum + parseInt(row[`${k}_U`] || 0), 0)) / days).toFixed(1) 
+                }; 
+            });
+            
             return averages;
         } catch (e) { console.error("TREND DATA ERR", e); return null; }
     },

@@ -221,9 +221,35 @@
                     <div id="lineSettlementContainer"></div>
                 </div>
 
-                <div id="counter-sale" style="display: none; margin-top: 2.5rem; text-align: center; padding: 4rem;">
-                    <i class="fas fa-calculator" style="font-size: 4rem; opacity: 0.1; margin-bottom: 2rem;"></i>
-                    <p style="opacity: 0.5; font-size: 1.2rem;">Counter Sale Module Under Development...</p>
+                <div id="counter-sale" style="display: none; margin-top: 2.5rem;">
+                    <form id="counterSaleForm" onsubmit="handleCounterSale(event)">
+                        <div class="line-form-grid">
+                            <div class="form-input-group"><label>Customer Name</label><input type="text" name="CUSTOMER_NAME" required></div>
+                            <div class="form-input-group"><label>Mobile Number</label><input type="tel" name="MOBILE"></div>
+                            <div class="form-input-group"><label>Place</label><input type="text" name="PLACE"></div>
+                        </div>
+
+                        <div class="section-title" style="margin-top:2rem;">Products & Rates</div>
+                        <div class="production-entry-grid" id="counterProductGrid">
+                            <div class="input-tile"><label style="color:var(--accent);">250ML</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="250ML" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_250ML" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">500ML</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="500ML" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_500ML" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">1LTR</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="1LTR" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_1LTR" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">2LTR</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="2LTR" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_2LTR" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">5LTR</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="5LTR" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_5LTR" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">20LTR</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="20LTR" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_20LTR" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                            <div class="input-tile"><label style="color:var(--accent);">BAGS</label><div style="display:flex; flex-direction:column; gap:5px;"><input type="number" name="BAGS" placeholder="Qty" value="0" oninput="calcCounterBill()"><input type="number" name="RATE_BAGS" placeholder="₹ Rate" step="0.01" value="0" oninput="calcCounterBill()"></div></div>
+                        </div>
+
+                        <div class="line-form-grid" style="margin-top:3rem; background:rgba(0,0,0,0.15); padding:2rem; border-radius:15px; border:1px solid rgba(251,140,0,0.2);">
+                            <div class="form-input-group"><label>Total Bill Amount</label><input type="number" id="counterTotal" readonly value="0"></div>
+                            <div class="form-input-group"><label>Amount Paid</label><input type="number" name="PAID_AMOUNT" id="counterPaid" value="0" oninput="calcCounterBill()"></div>
+                            <div class="form-input-group"><label>Balance Due</label><input type="number" id="counterDue" readonly value="0" style="color:var(--accent); font-weight:800;"></div>
+                        </div>
+
+                        <div class="save-btn-container" style="margin-top:2rem;">
+                            <button type="submit" class="save-production-btn" style="width:100%;">Finalize Counter Sale</button>
+                        </div>
+                    </form>
                 </div>
 
                 <div id="dealer-sale" style="display: none; margin-top: 2.5rem;">
@@ -511,14 +537,16 @@
                         <select id="reportType" class="report-select" onchange="toggleReportFilters(this)">
                             <option value="All Transactions">All Transactions (Daily Statement)</option>
                             <option value="Production">Production Report</option>
-                            <option value="Sales">Line Sales Report</option>
+                            <option value="Sales">Trip Distribution Report</option>
                             <option value="Detailed Line Sales">Detailed Line Sales (Customer Wise)</option>
+                            <option value="Counter Sales">Counter Sales Report</option>
                             <option value="Dealer Sales">Dealer Sales Report</option>
                             <option value="Account Ledger">Account Ledger Report</option>
                             <option value="Salary">Salary Report</option>
                             <option value="Driver Dues">Pending Driver Dues Report</option>
                             <option value="Raw Material">Raw Material Report</option>
-                            <option value="Stock">Stock Report</option>
+                            <option value="Dues Report">Unified All Dues Summary</option>
+                            <option value="Average Analysis">Average Analysis (Driver/Dealer)</option>
                         </select>
                     </div>
                     <div class="control-group" id="dateFilterGroup">
@@ -547,12 +575,31 @@
                     </div>
                     <div class="control-group" id="timeframeFilterGroup">
                         <label>Timeframe</label>
-                        <select id="reportTimeframe" class="report-select">
+                        <select id="reportTimeframe" class="report-select" onchange="toggleReportFilters(this)">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly" selected>Monthly</option>
                             <option value="yearly">Yearly</option>
+                            <option value="custom">Custom Range</option>
                         </select>
+                    </div>
+                    <div class="control-group" id="avgTypeGroup" style="display: none;">
+                        <label>Actor Category</label>
+                        <select id="avgActorType" class="report-select" onchange="updateAvgActorNames()">
+                            <option value="DRIVER">Drivers (Vehicles)</option>
+                            <option value="DEALER">Dealers</option>
+                        </select>
+                    </div>
+                    <div class="control-group" id="avgNameGroup" style="display: none;">
+                        <label>Actor Name</label>
+                        <select id="avgActorName" class="report-select"></select>
+                    </div>
+                    <div class="control-group" id="reportRangeGroup" style="display: none;">
+                        <label>Date Range (From - To)</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="date" id="reportStart" class="report-select" style="min-width:130px;">
+                            <input type="date" id="reportEnd" class="report-select" style="min-width:130px;">
+                        </div>
                     </div>
                 </div>
 
@@ -1481,40 +1528,110 @@
 
         // Report Logic Restoration
         function toggleReportFilters(sel) {
-            const type = sel.value;
+            const type = document.getElementById('reportType').value;
+            const timeframe = document.getElementById('reportTimeframe').value;
+
             document.getElementById('dateFilterGroup').style.display = (type === 'All Transactions') ? 'inline-block' : 'none';
-            document.getElementById('timeframeFilterGroup').style.display = (type !== 'All Transactions' && type !== 'Stock' && type !== 'Driver Dues') ? 'inline-block' : 'none';
+            document.getElementById('timeframeFilterGroup').style.display = (type !== 'All Transactions' && type !== 'Stock' && type !== 'Driver Dues' && type !== 'Average Analysis') ? 'inline-block' : 'none';
             document.getElementById('dealerFilterGroup').style.display = (type === 'Dealer Sales') ? 'inline-block' : 'none';
             document.getElementById('ledgerFilterGroup').style.display = (type === 'Account Ledger') ? 'inline-block' : 'none';
             document.getElementById('vehicleFilterGroup').style.display = (type === 'Sales' || type === 'Detailed Line Sales') ? 'inline-block' : 'none';
             document.getElementById('rmFilterGroup').style.display = (type === 'Raw Material') ? 'inline-block' : 'none';
+            
+            document.getElementById('avgTypeGroup').style.display = (type === 'Average Analysis') ? 'inline-block' : 'none';
+            document.getElementById('avgNameGroup').style.display = (type === 'Average Analysis') ? 'inline-block' : 'none';
+            if(type === 'Average Analysis') updateAvgActorNames();
+
+            document.getElementById('reportRangeGroup').style.display = (timeframe === 'custom' || type === 'Average Analysis') ? 'inline-block' : 'none';
+        }
+
+        function updateAvgActorNames() {
+            const type = document.getElementById('avgActorType').value;
+            const sel = document.getElementById('avgActorName');
+            if (type === 'DRIVER') {
+                const vehs = Array.from(document.getElementById('reportVehicle').options).map(o => o.value);
+                sel.innerHTML = vehs.map(v => `<option value="${v}">${v}</option>`).join('');
+            } else {
+                const dealers = Array.from(document.getElementById('reportDealer').options).map(o => o.value);
+                sel.innerHTML = dealers.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+        }
+
+        function calcCounterBill() {
+            const form = document.getElementById('counterSaleForm');
+            let total = 0;
+            ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                const q = parseFloat(form.querySelector(`[name="${k}"]`).value || 0);
+                const r = parseFloat(form.querySelector(`[name="RATE_${k}"]`).value || 0);
+                total += (q * r);
+            });
+            const paid = parseFloat(document.getElementById('counterPaid').value || 0);
+            document.getElementById('counterTotal').value = total.toFixed(2);
+            document.getElementById('counterDue').value = (total - paid).toFixed(2);
+        }
+
+        async function handleCounterSale(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd);
+            data.TOTAL_AMOUNT = parseFloat(document.getElementById('counterTotal').value);
+            data.DUE = parseFloat(document.getElementById('counterDue').value);
+            data.PAID_AMOUNT = parseFloat(data.PAID_AMOUNT || 0);
+
+            const res = await SupabaseService.saveCounterSale(data);
+            if (!res.error) {
+                alert("Counter Sale Recorded!");
+                e.target.reset();
+                calcCounterBill();
+                refreshDashboard();
+            } else alert("Error: " + res.error.message);
         }
 
         async function generateReport() {
-            const type = document.getElementById('reportType').value;
-            const timeframe = document.getElementById('reportTimeframe').value;
-            const specificDate = document.getElementById('reportDate').value;
-            let target = '';
-            if (type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
-            else if (type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
-            else if (type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
-            else if (type === 'Raw Material') target = document.getElementById('reportRMAction').value;
+            try {
+                const type = document.getElementById('reportType').value;
+                const timeframe = document.getElementById('reportTimeframe').value;
+                const specificDate = document.getElementById('reportDate').value;
+                let target = 'All';
 
-            const tableHeader = document.getElementById('reportHeader');
-            const tableBody = document.getElementById('reportContent');
+                if (type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
+                else if (type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
+                else if (type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
+                else if (type === 'Raw Material') target = document.getElementById('reportRMAction').value;
+                else if (type === 'Average Analysis') {
+                    target = { 
+                        type: document.getElementById('avgActorType').value, 
+                        name: document.getElementById('avgActorName').value 
+                    };
+                }
 
-            const data = await SupabaseService.getReportData(type, timeframe, target, specificDate);
-            window.currentReport = data;
+                const customRange = { 
+                    start: document.getElementById('reportStart').value, 
+                    end: document.getElementById('reportEnd').value 
+                };
 
-            if (!data || !data.length) {
-                tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records found.</td></tr>';
-                return;
+                const tableHeader = document.getElementById('reportHeader');
+                const tableBody = document.getElementById('reportContent');
+
+                // Clear previous state
+                tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;"><i class="fas fa-spinner fa-spin"></i> Generating Report...</td></tr>';
+
+                const data = await SupabaseService.getReportData(type, timeframe, target, specificDate, customRange);
+                window.currentReport = data;
+
+                if (!data || !data.length) {
+                    tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records found matching your criteria.</td></tr>';
+                    return;
+                }
+
+                const rawKeys = Object.keys(data[0]);
+                const keys = rawKeys.filter(k => k !== 'id' && k !== 'SALES_ID' && k !== 'DUE');
+                tableHeader.innerHTML = `<tr>${keys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
+                tableBody.innerHTML = data.map(r => `<tr>${keys.map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('');
+            } catch (err) {
+                console.error("Report Error:", err);
+                document.getElementById('reportContent').innerHTML = `<tr><td colspan="15" style="text-align:center; padding:3rem; color: #ff4d4d;">Error Generating Report: ${err.message}</td></tr>`;
             }
-
-            const rawKeys = Object.keys(data[0]);
-            const keys = rawKeys.filter(k => k !== 'id' && k !== 'SALES_ID' && k !== 'DUE');
-            tableHeader.innerHTML = `<tr>${keys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
-            tableBody.innerHTML = data.map(r => `<tr>${keys.map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('');
         }
 
         function exportCSV() {
