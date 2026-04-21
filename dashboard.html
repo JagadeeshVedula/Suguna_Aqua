@@ -253,6 +253,7 @@
                     <div style="display: flex; gap: 10px;">
                         <button class="add-btn active" onclick="toggleLedgerSub('ledger-transactions', this)">Transactions</button>
                         <button class="add-btn" onclick="toggleLedgerSub('driver-dues', this); fetchDriverDues();">Driver Dues</button>
+                        <button class="add-btn" onclick="toggleLedgerSub('salaries', this); fetchDriverSalaries();">Salaries</button>
                         <button class="add-btn" onclick="toggleLedgerSub('add-head', this)">Add Head</button>
                     </div>
                 </div>
@@ -301,6 +302,28 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="salaries" style="display: none; margin-top: 2.5rem;">
+                    <div class="glass-panel">
+                        <h3 style="color: white; margin-bottom: 2rem;">Driver Salary Monthly Processing</h3>
+                        <div class="report-table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Driver Name</th>
+                                        <th>Total Dues Owed</th>
+                                        <th>Base Salary (Input)</th>
+                                        <th style="color: var(--accent);">Net Payable</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salariesContent">
+                                    <tr><td colspan="5" style="text-align:center; padding:3rem; opacity:0.5;">Loading driver list...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -322,8 +345,11 @@
                             <option value="All Transactions">All Transactions (Daily Statement)</option>
                             <option value="Production">Production Report</option>
                             <option value="Sales">Line Sales Report</option>
+                            <option value="Detailed Line Sales">Detailed Line Sales (Customer Wise)</option>
                             <option value="Dealer Sales">Dealer Sales Report</option>
                             <option value="Account Ledger">Account Ledger Report</option>
+                            <option value="Salary">Salary Report</option>
+                            <option value="Driver Dues">Pending Driver Dues Report</option>
                             <option value="Stock">Stock Report</option>
                         </select>
                     </div>
@@ -338,6 +364,10 @@
                     <div class="control-group" id="ledgerFilterGroup" style="display: none;">
                         <label>Account Head</label>
                         <select id="reportLedgerHead" class="report-select"></select>
+                    </div>
+                    <div class="control-group" id="vehicleFilterGroup" style="display: none;">
+                        <label>Vehicle</label>
+                        <select id="reportVehicle" class="report-select"></select>
                     </div>
                     <div class="control-group" id="timeframeFilterGroup">
                         <label>Timeframe</label>
@@ -438,8 +468,58 @@
             document.getElementById('ledger-transactions').style.display = (id === 'ledger-transactions') ? 'block' : 'none';
             document.getElementById('add-head').style.display = (id === 'add-head') ? 'block' : 'none';
             document.getElementById('driver-dues').style.display = (id === 'driver-dues') ? 'block' : 'none';
+            document.getElementById('salaries').style.display = (id === 'salaries') ? 'block' : 'none';
             document.querySelectorAll('#ledger .add-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        async function fetchDriverSalaries() {
+            try {
+                const results = await SupabaseService.getDriversWithSummary();
+                const content = document.getElementById('salariesContent');
+                if(!content) return;
+                if(!results || !results.length) { content.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem; opacity: 0.5;">No drivers found.</td></tr>'; return; }
+                content.innerHTML = results.map(d => {
+                    const due = parseFloat(d.TOTAL_DUE || 0);
+                    return `
+                        <tr>
+                            <td style="font-weight:700;">${d.NAME}</td>
+                            <td style="color: #ff595e;">₹${due.toFixed(2)}</td>
+                            <td>
+                                <input type="number" id="base_sal_${d.NAME}" value="0" oninput="calcNetSal('${d.NAME}', ${due})" 
+                                    style="width: 120px; padding: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px;">
+                            </td>
+                            <td style="color:var(--accent); font-weight:700; font-size: 1.2rem;">₹<span id="net_sal_${d.NAME}">0.00</span></td>
+                            <td>
+                                <button onclick="processSalary('${d.NAME}', ${due})" class="add-mini-btn" style="background: #00f5a0; color: #000; height: 35px; min-width: 80px;">
+                                    Confirm Pay
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) { console.error("Salaries UI Error:", err); }
+        }
+
+        function calcNetSal(name, due) {
+            const base = parseFloat(document.getElementById(`base_sal_${name}`).value || 0);
+            const net = Math.max(0, base - due);
+            document.getElementById(`net_sal_${name}`).innerText = net.toFixed(2);
+        }
+
+        async function processSalary(name, due) {
+            const base = parseFloat(document.getElementById(`base_sal_${name}`).value || 0);
+            if (base <= 0) { alert("Please enter a valid salary amount."); return; }
+            const net = Math.max(0, base - due);
+            if (confirm(`Confirm salary payment for ${name}?\nBase: ₹${base}\nDue Deduction: ₹${due}\nNet Payable: ₹${net}`)) {
+                const res = await SupabaseService.paySalary(name, base, due, net);
+                if (!res.error) {
+                    alert("Salary Payment Recorded & Dues Settled!");
+                    fetchDriverSalaries();
+                    fetchDriverDues(); // Ensure dues list is also cleared
+                    refreshDashboard();
+                } else { alert("Error: " + res.error.message); }
+            }
         }
 
         async function fetchDriverDues() {
@@ -704,9 +784,36 @@
             }
 
             data.SALES_ID = id; data.VEHICLE_NO = vno; data.DRIVER = driver;
+            
+            // Extract detailed customer rows for granular reporting
+            const customerRows = [];
+            document.querySelectorAll(`#customers_${id} .customer-row`).forEach(row => {
+                const custName = row.querySelector('.cust-name').value;
+                if(!custName) return;
+                const custData = {
+                    SALES_ID: String(id), VEHICLE_NO: vno, DRIVER: driver, CUSTOMER_NAME: custName,
+                    DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ')
+                };
+                ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                    custData[k] = parseInt(row.querySelector(`.q-${k.toLowerCase()}`).value || 0);
+                    custData[`RATE_${k}`] = parseFloat(row.querySelector(`.r-${k.toLowerCase()}`).value || 0);
+                });
+                customerRows.push(custData);
+            });
+
+            // Populate trip-level rates for the summary report (take from first row as reference)
+            if(customerRows.length > 0) {
+                ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                    data[`RATE_${k}`] = customerRows[0][`RATE_${k}`] || 0;
+                });
+            }
+
             const res = await SupabaseService.saveCashEntry(data);
             
             if (!res.error) {
+                // Save detailed customer rows
+                if(customerRows.length > 0) await SupabaseService.saveCustomerSales(customerRows);
+
                 // FORCE REMOVE FROM SCREEN IMMEDIATELY
                 window.locally_settled.push(String(id));
                 const card = e.target.closest('.glass-panel');
@@ -813,16 +920,20 @@
         function toggleReportFilters(sel) {
             const type = sel.value;
             document.getElementById('dateFilterGroup').style.display = (type === 'All Transactions') ? 'inline-block' : 'none';
-            document.getElementById('timeframeFilterGroup').style.display = (type !== 'All Transactions' && type !== 'Stock') ? 'inline-block' : 'none';
+            document.getElementById('timeframeFilterGroup').style.display = (type !== 'All Transactions' && type !== 'Stock' && type !== 'Driver Dues') ? 'inline-block' : 'none';
             document.getElementById('dealerFilterGroup').style.display = (type === 'Dealer Sales') ? 'inline-block' : 'none';
             document.getElementById('ledgerFilterGroup').style.display = (type === 'Account Ledger') ? 'inline-block' : 'none';
+            document.getElementById('vehicleFilterGroup').style.display = (type === 'Sales' || type === 'Detailed Line Sales') ? 'inline-block' : 'none';
         }
 
         async function generateReport() {
             const type = document.getElementById('reportType').value;
             const timeframe = document.getElementById('reportTimeframe').value;
             const specificDate = document.getElementById('reportDate').value;
-            const target = (type === 'Dealer Sales') ? document.getElementById('reportDealer').value : document.getElementById('reportLedgerHead').value;
+            let target = '';
+            if(type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
+            else if(type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
+            else if(type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
             
             const tableHeader = document.getElementById('reportHeader');
             const tableBody = document.getElementById('reportContent');
@@ -870,6 +981,7 @@
             document.getElementById('editDealerSelect').innerHTML = '<option value="">--Select Dealer--</option>' + dealers.map(d=>`<option value="${d.NAME}" data-prices='${JSON.stringify(d)}'>${d.NAME}</option>`).join('');
             document.getElementById('reportDealer').innerHTML = '<option value="All Dealers">All Dealers</option>' + dealers.map(d=>`<option value="${d.NAME}">${d.NAME}</option>`).join('');
             document.getElementById('reportLedgerHead').innerHTML = '<option value="All Heads">All Heads</option>' + heads.map(h=>`<option value="${h.NAME}">${h.NAME}</option>`).join('');
+            document.getElementById('reportVehicle').innerHTML = '<option value="All Vehicles">All Vehicles</option>' + vehs.map(v=>`<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
         }
 
         // Form Submit Listeners

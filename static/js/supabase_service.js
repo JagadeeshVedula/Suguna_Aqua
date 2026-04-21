@@ -130,8 +130,18 @@ const SupabaseService = {
             "20LTR": parseInt(data["20LTR"] || data["20ltr"] || 0),
             "BAGS": parseInt(data["BAGS"] || data["bags"] || 0)
         };
+        
+        // Capture rates (prices) for the summary entry
+        ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+            payload[`RATE_${k}`] = parseFloat(data[`RATE_${k}`] || 0);
+        });
+
         payload.DUE = Math.max(0, (payload.PAID_BY_CUSTOMER - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
         return await _supabase.from('CASH').insert([payload]);
+    },
+
+    async saveCustomerSales(rows) {
+        return await _supabase.from('LINE_CUSTOMER_SALES').insert(rows);
     },
 
     async getDriverDues() {
@@ -158,6 +168,47 @@ const SupabaseService = {
             const { error } = await _supabase.from('CASH').update({ DUE: newDue.toFixed(2) }).eq('id', id);
             return { success: !error, error };
         } catch (e) { return { error: e }; }
+    },
+
+    async getDriversWithSummary() {
+        try {
+            const { data: salesDrivers } = await _supabase.from('SALES').select('DRIVER').eq('TYPE', 'LINE');
+            const drivers = [...new Set((salesDrivers || []).map(d => d.DRIVER))].filter(Boolean);
+            const { data: cashDues } = await _supabase.from('CASH').select('DRIVER, DUE');
+            const duesMap = {};
+            (cashDues || []).forEach(row => {
+                if (!duesMap[row.DRIVER]) duesMap[row.DRIVER] = 0;
+                duesMap[row.DRIVER] += parseFloat(row.DUE || 0);
+            });
+            return drivers.map(name => ({ NAME: name, TOTAL_DUE: duesMap[name] || 0 }));
+        } catch (e) { console.error("DRIVERS SUMMARY ERR", e); return []; }
+    },
+
+    async paySalary(driverName, baseSalary, dueDeduction, netPaid) {
+        try {
+            // 1. Record the salary payment as a DEBIT in ACCOUNT_TRANSACTIONS
+            const salaryEntry = {
+                HEAD_NAME: 'Salary',
+                PURPOSE: `Monthly Salary Payment - ${driverName} (Base: ${baseSalary}, Due Ded: ${dueDeduction})`,
+                CREDIT: 0,
+                DEBIT: netPaid,
+                TO_BE_PAID: 0,
+                DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ')
+            };
+            const { error: txError } = await _supabase.from('ACCOUNT_TRANSACTIONS').insert([salaryEntry]);
+            if (txError) throw txError;
+
+            // 2. Clear the dues for this driver in the CASH table
+            if (dueDeduction > 0) {
+                const { error: dueError } = await _supabase.from('CASH').update({ DUE: "0.00" }).eq('DRIVER', driverName);
+                if (dueError) throw dueError;
+            }
+
+            return { success: true };
+        } catch (e) {
+            console.error("PAY SALARY ERR", e);
+            return { error: e };
+        }
     },
 
     async getVehicles() { const { data } = await _supabase.from('VEHICLES').select('VEHICLE_NO'); return data || []; },
@@ -232,13 +283,26 @@ const SupabaseService = {
             const { data } = await _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Sales") {
-            const { data } = await _supabase.from('CASH').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
+            let q = _supabase.from('CASH').select('*').gte('DATE', startStr);
+            if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
+            const { data } = await q.order('DATE', { ascending: false });
+            return data || [];
+        } else if (type === "Detailed Line Sales") {
+            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr);
+            if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
+            const { data } = await q.order('DATE', { ascending: false });
             return data || [];
         } else if (type === "Account Ledger") {
             let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('*').gte('DATE', startStr);
             if (filter && filter !== "All Heads") q = q.eq('HEAD_NAME', filter);
             const { data } = await q.order('DATE', { ascending: false });
             return data || [];
+        } else if (type === "Salary") {
+            const { data } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('*').eq('HEAD_NAME', 'Salary').gte('DATE', startStr).order('DATE', { ascending: false });
+            return data || [];
+        } else if (type === "Driver Dues") {
+            const { data } = await _supabase.from('CASH').select('*').order('DATE', { ascending: false });
+            return (data || []).filter(row => parseFloat(row.DUE || 0) > 0);
         }
         return [];
     },
