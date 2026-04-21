@@ -136,7 +136,8 @@ const SupabaseService = {
             payload[`RATE_${k}`] = parseFloat(data[`RATE_${k}`] || 0);
         });
 
-        payload.DUE = Math.max(0, (payload.PAID_BY_CUSTOMER - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
+        // Driver Due = Total Bill - Trip Expenses - Cash Handed Over to Office
+        payload.DUE = Math.max(0, (payload.TOTAL_AMOUNT - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
         return await _supabase.from('CASH').insert([payload]);
     },
 

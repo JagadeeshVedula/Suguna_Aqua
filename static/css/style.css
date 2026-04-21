@@ -864,3 +864,77 @@ select option {
     border-color: var(--accent);
     outline: none;
 }
+
+/* ── Dispatch expandable list (Line Sale) ────────────────────── */
+.dispatch-list-card {
+    background: rgba(0, 18, 25, 0.6);
+    border: 1px solid rgba(251, 140, 0, 0.18);
+    border-left: 4px solid var(--accent);
+    border-radius: 18px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.dispatch-list-card:hover {
+    box-shadow: 0 6px 30px rgba(251, 140, 0, 0.12);
+}
+
+.dispatch-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 2rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.25s ease;
+    gap: 1rem;
+}
+
+.dispatch-summary-row:hover {
+    background: rgba(251, 140, 0, 0.06);
+}
+
+.dispatch-info {
+    flex: 1;
+}
+
+.dispatch-vehicle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    color: white;
+}
+
+.dispatch-expand-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 1.2rem;
+    background: rgba(251, 140, 0, 0.1);
+    border: 1px solid rgba(251, 140, 0, 0.3);
+    color: var(--accent);
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+}
+
+.dispatch-summary-row:hover .dispatch-expand-btn {
+    background: var(--accent);
+    color: #001219;
+    box-shadow: 0 0 14px rgba(251, 140, 0, 0.4);
+}
+
+.dispatch-settle-form {
+    padding: 0 2rem 2rem 2rem;
+    animation: settleReveal 0.28s ease-out;
+}
+
+@keyframes settleReveal {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

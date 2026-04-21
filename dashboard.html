@@ -24,7 +24,9 @@
         <header class="header">
             <div class="header-top" style="display: flex; align-items: center; gap: 20px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="static/images/logo.png" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover;" onerror="this.style.display='none'; this.parentNode.style.gap='0';">
+                    <img src="static/images/logo.png"
+                        style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover;"
+                        onerror="this.style.display='none'; this.parentNode.style.gap='0';">
                     <h1 style="margin:0;">SAI SUGUNA AQUA PRODUCTS</h1>
                 </div>
                 <div class="user-actions">
@@ -57,11 +59,14 @@
         <!-- Production Entry -->
         <section id="production" class="page-section">
             <form id="productionForm" class="glass-panel">
-                <h2 style="font-size: 2.2rem; margin-bottom: 2rem; color: var(--primary); text-align: center;">Production
+                <h2 style="font-size: 2.2rem; margin-bottom: 2rem; color: var(--primary); text-align: center;">
+                    Production
                     Entry</h2>
                 <div class="production-entry-grid">
-                    <div class="input-tile"><label>250ML Bottles</label><input type="number" name="250ML" value="0"></div>
-                    <div class="input-tile"><label>500ML Bottles</label><input type="number" name="500ML" value="0"></div>
+                    <div class="input-tile"><label>250ML Bottles</label><input type="number" name="250ML" value="0">
+                    </div>
+                    <div class="input-tile"><label>500ML Bottles</label><input type="number" name="500ML" value="0">
+                    </div>
                     <div class="input-tile"><label>1LTR Bottles</label><input type="number" name="1LTR" value="0"></div>
                     <div class="input-tile"><label>2LTR Bottles</label><input type="number" name="2LTR" value="0"></div>
                     <div class="input-tile"><label>5LTR Cans</label><input type="number" name="5LTR" value="0"></div>
@@ -89,20 +94,28 @@
 
                 <form id="salesDispatchForm">
                     <div class="line-form-grid">
-                        <div class="form-input-group"><label>Vehicle No</label><select name="VEHICLE_NO" id="vehicleSelect" required></select></div>
-                        <div class="form-input-group"><label>Select Route</label><select name="ROUTE" id="routeSelect" required></select></div>
-                        <div class="form-input-group"><label>Driver Name</label><input type="text" name="DRIVER" placeholder="Full Name" required></div>
-                        <div class="form-input-group"><label>Driver Mobile</label><input type="tel" name="MOBILE" placeholder="Mobile Number" required></div>
-                        <div class="form-input-group"><label>Aadhar Number</label><input type="text" name="ADHAR" placeholder="12-digit Number" required></div>
+                        <div class="form-input-group"><label>Vehicle No</label><select name="VEHICLE_NO"
+                                id="vehicleSelect" required></select></div>
+                        <div class="form-input-group"><label>Select Route</label><select name="ROUTE" id="routeSelect"
+                                required></select></div>
+                        <div class="form-input-group"><label>Driver Name</label><input type="text" name="DRIVER"
+                                placeholder="Full Name" required></div>
+                        <div class="form-input-group"><label>Driver Mobile</label><input type="tel" name="MOBILE"
+                                placeholder="Mobile Number" required></div>
+                        <div class="form-input-group"><label>Aadhar Number</label><input type="text" name="ADHAR"
+                                placeholder="12-digit Number" required></div>
                     </div>
 
-                    <h3 style="color: var(--accent); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; font-size: 1.1rem; border-bottom: 1px solid rgba(251, 140, 0, 0.2); padding-bottom: 0.5rem; display: inline-block;">Product Quantities & Routes</h3>
+                    <h3
+                        style="color: var(--accent); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; font-size: 1.1rem; border-bottom: 1px solid rgba(251, 140, 0, 0.2); padding-bottom: 0.5rem; display: inline-block;">
+                        Product Quantities & Routes</h3>
                     <div class="production-entry-grid" id="dispatchProductContainer">
                         <!-- Populated via JS -->
                     </div>
 
                     <div class="save-btn-container" style="margin-top: 3rem; text-align: right;">
-                        <button type="submit" class="save-production-btn" style="background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);">
+                        <button type="submit" class="save-production-btn"
+                            style="background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);">
                             <i class="fas fa-paper-plane" style="margin-right: 10px;"></i> Record Dispatch
                         </button>
                     </div>
@@ -133,34 +146,52 @@
 
                 <div id="dealer-sale" style="display: none; margin-top: 2.5rem;">
                     <div style="display: flex; gap: 10px; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 10px;">
-                        <button class="add-btn active" onclick="toggleDealerSub('dealer-dispatch', this)">Dealer Dispatch</button>
+                        <button class="add-btn active" onclick="toggleDealerSub('dealer-dispatch', this)">Dealer
+                            Dispatch</button>
                         <button class="add-btn" onclick="toggleDealerSub('add-dealer', this)">Add New Dealer</button>
-                        <button class="add-btn" onclick="toggleDealerSub('manage-dealers', this); fillManageDealerSelect();">Manage Prices</button>
+                        <button class="add-btn"
+                            onclick="toggleDealerSub('manage-dealers', this); fillManageDealerSelect();">Manage
+                            Prices</button>
                         <button class="add-btn" onclick="toggleDealerSub('dealer-ledger', this)">Payment Ledger</button>
                     </div>
 
                     <div id="dealer-dispatch" class="dealer-subactive">
                         <form id="dealerDispatchForm" onsubmit="handleDealerDispatch(event)">
                             <div class="line-form-grid">
-                                <div class="form-input-group"><label>Select Dealer</label><select name="DRIVER" id="dealerSelect" onchange="loadDealerFormData(this)" required></select></div>
-                                <div class="form-input-group"><label>Place</label><input type="text" id="dealerPlace" readonly></div>
-                                <div class="form-input-group"><label>Amount Paid</label><input type="number" name="PAID_BY_CUSTOMER" id="dealerAmountPaid" value="0"></div>
+                                <div class="form-input-group"><label>Select Dealer</label><select name="DRIVER"
+                                        id="dealerSelect" onchange="loadDealerFormData(this)" required></select></div>
+                                <div class="form-input-group"><label>Place</label><input type="text" id="dealerPlace"
+                                        readonly></div>
+                                <div class="form-input-group"><label>Amount Paid</label><input type="number"
+                                        name="PAID_BY_CUSTOMER" id="dealerAmountPaid" value="0"></div>
                             </div>
                             <div class="production-entry-grid">
-                                <div class="input-tile"><label>250ML</label><input type="number" name="250ML" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>500ML</label><input type="number" name="500ML" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>1LTR</label><input type="number" name="1LTR" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>2LTR</label><input type="number" name="2LTR" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>5LTR</label><input type="number" name="5LTR" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>20LTR</label><input type="number" name="20LTR" value="0" oninput="calcDealerTotal()"></div>
-                                <div class="input-tile"><label>Bags</label><input type="number" name="BAGS" value="0" oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>250ML</label><input type="number" name="250ML" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>500ML</label><input type="number" name="500ML" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>1LTR</label><input type="number" name="1LTR" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>2LTR</label><input type="number" name="2LTR" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>5LTR</label><input type="number" name="5LTR" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>20LTR</label><input type="number" name="20LTR" value="0"
+                                        oninput="calcDealerTotal()"></div>
+                                <div class="input-tile"><label>Bags</label><input type="number" name="BAGS" value="0"
+                                        oninput="calcDealerTotal()"></div>
                             </div>
-                            <div class="reconcile-section" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                                    <div style="font-size: 1.1rem; opacity: 0.8;">Total Quantity: <span id="dealerTotalQty" style="font-weight: 700; color: white;">0</span></div>
+                            <div class="reconcile-section"
+                                style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-size: 1.1rem; opacity: 0.8;">Total Quantity: <span
+                                            id="dealerTotalQty" style="font-weight: 700; color: white;">0</span></div>
                                     <div style="text-align: right;">
-                                        <div style="font-size: 0.9rem; opacity: 0.6; margin-bottom: 5px;">Total Bill Amount</div>
-                                        <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">₹<span id="dealerTotalAmount">0.00</span></div>
+                                        <div style="font-size: 0.9rem; opacity: 0.6; margin-bottom: 5px;">Total Bill
+                                            Amount</div>
+                                        <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">₹<span
+                                                id="dealerTotalAmount">0.00</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -168,7 +199,8 @@
                             <input type="hidden" name="TOTAL_AMOUNT" id="dealerTotalAmountInput">
                             <input type="hidden" name="TYPE" value="DEALER">
                             <input type="hidden" name="CASH_RECEIVED" id="dealerCashReceived">
-                            <button type="submit" class="save-production-btn" style="margin-top: 2rem; width: 100%;">Confirm Dispatch</button>
+                            <button type="submit" class="save-production-btn"
+                                style="margin-top: 2rem; width: 100%;">Confirm Dispatch</button>
                         </form>
                     </div>
 
@@ -176,21 +208,32 @@
                         <form id="addDealerForm" class="glass-panel">
                             <h3 style="color: white; margin-bottom: 2rem;">Dealer Registration</h3>
                             <div class="line-form-grid">
-                                <div class="form-input-group"><label>Name</label><input type="text" name="NAME" required></div>
-                                <div class="form-input-group"><label>Place</label><input type="text" name="PLACE" required></div>
-                                <div class="form-input-group"><label>Mobile</label><input type="text" name="MOBILE"></div>
+                                <div class="form-input-group"><label>Name</label><input type="text" name="NAME"
+                                        required></div>
+                                <div class="form-input-group"><label>Place</label><input type="text" name="PLACE"
+                                        required></div>
+                                <div class="form-input-group"><label>Mobile</label><input type="text" name="MOBILE">
+                                </div>
                             </div>
                             <h4 style="color:var(--accent); margin: 2rem 0 1rem;">Unit Prices (₹)</h4>
                             <div class="production-entry-grid">
-                                <div class="input-tile"><label>250ML</label><input type="number" name="PR_250ML" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>500ML</label><input type="number" name="PR_500ML" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>1LTR</label><input type="number" name="PR_1LTR" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>2LTR</label><input type="number" name="PR_2LTR" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>5LTR</label><input type="number" name="PR_5LTR" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>20LTR</label><input type="number" name="PR_20LTR" value="0" step="0.01"></div>
-                                <div class="input-tile"><label>Bags</label><input type="number" name="PR_BAGS" value="0" step="0.01"></div>
+                                <div class="input-tile"><label>250ML</label><input type="number" name="PR_250ML"
+                                        value="0" step="0.01"></div>
+                                <div class="input-tile"><label>500ML</label><input type="number" name="PR_500ML"
+                                        value="0" step="0.01"></div>
+                                <div class="input-tile"><label>1LTR</label><input type="number" name="PR_1LTR" value="0"
+                                        step="0.01"></div>
+                                <div class="input-tile"><label>2LTR</label><input type="number" name="PR_2LTR" value="0"
+                                        step="0.01"></div>
+                                <div class="input-tile"><label>5LTR</label><input type="number" name="PR_5LTR" value="0"
+                                        step="0.01"></div>
+                                <div class="input-tile"><label>20LTR</label><input type="number" name="PR_20LTR"
+                                        value="0" step="0.01"></div>
+                                <div class="input-tile"><label>Bags</label><input type="number" name="PR_BAGS" value="0"
+                                        step="0.01"></div>
                             </div>
-                            <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Register Dealer</button>
+                            <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Register
+                                Dealer</button>
                         </form>
                     </div>
 
@@ -204,24 +247,34 @@
                             <form id="updatePricesForm">
                                 <input type="hidden" name="dealer_name" id="edit-dealer-name">
                                 <div class="production-entry-grid">
-                                    <div class="input-tile"><label>250ML</label><input type="number" name="PR_250ML" id="edit-pr-250ML" step="0.01"></div>
-                                    <div class="input-tile"><label>500ML</label><input type="number" name="PR_500ML" id="edit-pr-500ML" step="0.01"></div>
-                                    <div class="input-tile"><label>1LTR</label><input type="number" name="PR_1LTR" id="edit-pr-1LTR" step="0.01"></div>
-                                    <div class="input-tile"><label>2LTR</label><input type="number" name="PR_2LTR" id="edit-pr-2LTR" step="0.01"></div>
-                                    <div class="input-tile"><label>5LTR</label><input type="number" name="PR_5LTR" id="edit-pr-5LTR" step="0.01"></div>
-                                    <div class="input-tile"><label>20LTR</label><input type="number" name="PR_20LTR" id="edit-pr-20LTR" step="0.01"></div>
-                                    <div class="input-tile"><label>Bags</label><input type="number" name="PR_BAGS" id="edit-pr-BAGS" step="0.01"></div>
+                                    <div class="input-tile"><label>250ML</label><input type="number" name="PR_250ML"
+                                            id="edit-pr-250ML" step="0.01"></div>
+                                    <div class="input-tile"><label>500ML</label><input type="number" name="PR_500ML"
+                                            id="edit-pr-500ML" step="0.01"></div>
+                                    <div class="input-tile"><label>1LTR</label><input type="number" name="PR_1LTR"
+                                            id="edit-pr-1LTR" step="0.01"></div>
+                                    <div class="input-tile"><label>2LTR</label><input type="number" name="PR_2LTR"
+                                            id="edit-pr-2LTR" step="0.01"></div>
+                                    <div class="input-tile"><label>5LTR</label><input type="number" name="PR_5LTR"
+                                            id="edit-pr-5LTR" step="0.01"></div>
+                                    <div class="input-tile"><label>20LTR</label><input type="number" name="PR_20LTR"
+                                            id="edit-pr-20LTR" step="0.01"></div>
+                                    <div class="input-tile"><label>Bags</label><input type="number" name="PR_BAGS"
+                                            id="edit-pr-BAGS" step="0.01"></div>
                                 </div>
-                                <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Update Prices</button>
+                                <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Update
+                                    Prices</button>
                             </form>
                         </div>
                     </div>
 
                     <div id="dealer-ledger" style="display: none;">
                         <div class="glass-panel">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                                 <h3>Payment Ledger Search</h3>
-                                <input type="date" id="ledgerDate" class="report-select" style="max-width: 200px;" onchange="fetchDealerLedger()">
+                                <input type="date" id="ledgerDate" class="report-select" style="max-width: 200px;"
+                                    onchange="fetchDealerLedger()">
                             </div>
                             <div class="report-table-container">
                                 <table class="report-table">
@@ -229,14 +282,25 @@
                                         <tr>
                                             <th>Time</th>
                                             <th>Dealer</th>
-                                            <th>250ML</th><th>500ML</th><th>1LTR</th><th>2LTR</th><th>5LTR</th><th>20LTR</th><th>Bags</th>
+                                            <th>250ML</th>
+                                            <th>500ML</th>
+                                            <th>1LTR</th>
+                                            <th>2LTR</th>
+                                            <th>5LTR</th>
+                                            <th>20LTR</th>
+                                            <th>Bags</th>
                                             <th>Bill</th>
                                             <th>Paid</th>
                                             <th>Pending</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="ledgerContent"><tr><td colspan="13" style="text-align: center; padding: 3rem; opacity: 0.5;">Select a date to view results...</td></tr></tbody>
+                                    <tbody id="ledgerContent">
+                                        <tr>
+                                            <td colspan="13" style="text-align: center; padding: 3rem; opacity: 0.5;">
+                                                Select a date to view results...</td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -251,9 +315,12 @@
                 <div class="section-header">
                     <h2 style="font-size: 2.2rem; color: var(--accent);">Account Ledger</h2>
                     <div style="display: flex; gap: 10px;">
-                        <button class="add-btn active" onclick="toggleLedgerSub('ledger-transactions', this)">Transactions</button>
-                        <button class="add-btn" onclick="toggleLedgerSub('driver-dues', this); fetchDriverDues();">Driver Dues</button>
-                        <button class="add-btn" onclick="toggleLedgerSub('salaries', this); fetchDriverSalaries();">Salaries</button>
+                        <button class="add-btn active"
+                            onclick="toggleLedgerSub('ledger-transactions', this)">Transactions</button>
+                        <button class="add-btn"
+                            onclick="toggleLedgerSub('driver-dues', this); fetchDriverDues();">Driver Dues</button>
+                        <button class="add-btn"
+                            onclick="toggleLedgerSub('salaries', this); fetchDriverSalaries();">Salaries</button>
                         <button class="add-btn" onclick="toggleLedgerSub('add-head', this)">Add Head</button>
                     </div>
                 </div>
@@ -261,20 +328,28 @@
                 <div id="ledger-transactions" class="ledger-subactive" style="margin-top: 2.5rem;">
                     <form id="ledgerForm" class="glass-panel" style="padding: 2.5rem;">
                         <div class="line-form-grid">
-                            <div class="form-input-group"><label>Account Head</label><select name="head_id_name" id="ledgerHeadSelect" required></select></div>
-                            <div class="form-input-group"><label>Purpose/Description</label><input type="text" name="PURPOSE" placeholder="Reason for transaction"></div>
-                            <div class="form-input-group"><label>Credit (Recv)</label><input type="number" name="CREDIT" value="0"></div>
-                            <div class="form-input-group"><label>Debit (Spend)</label><input type="number" name="DEBIT" value="0"></div>
-                            <div class="form-input-group"><label>To Be Paid</label><input type="number" name="TO_BE_PAID" value="0"></div>
+                            <div class="form-input-group"><label>Account Head</label><select name="head_id_name"
+                                    id="ledgerHeadSelect" required></select></div>
+                            <div class="form-input-group"><label>Purpose/Description</label><input type="text"
+                                    name="PURPOSE" placeholder="Reason for transaction"></div>
+                            <div class="form-input-group"><label>Credit (Recv)</label><input type="number" name="CREDIT"
+                                    value="0"></div>
+                            <div class="form-input-group"><label>Debit (Spend)</label><input type="number" name="DEBIT"
+                                    value="0"></div>
+                            <div class="form-input-group"><label>To Be Paid</label><input type="number"
+                                    name="TO_BE_PAID" value="0"></div>
                         </div>
-                        <button type="submit" class="save-production-btn" style="margin-top: 2.5rem;">Save Entry</button>
+                        <button type="submit" class="save-production-btn" style="margin-top: 2.5rem;">Save
+                            Entry</button>
                     </form>
                 </div>
 
                 <div id="add-head" style="display: none; margin-top: 2.5rem;">
-                    <form id="addHeadForm" class="glass-panel" style="padding: 2.5rem; max-width: 600px; margin: 0 auto;">
+                    <form id="addHeadForm" class="glass-panel"
+                        style="padding: 2.5rem; max-width: 600px; margin: 0 auto;">
                         <h3 style="color: white; margin-bottom: 2rem;">Create Account Head</h3>
-                        <div class="form-input-group"><label>Head Name</label><input type="text" name="NAME" required placeholder="e.g. Electricity, Maintenance"></div>
+                        <div class="form-input-group"><label>Head Name</label><input type="text" name="NAME" required
+                                placeholder="e.g. Electricity, Maintenance"></div>
                         <button type="submit" class="save-production-btn" style="margin-top: 2rem;">Create Head</button>
                     </form>
                 </div>
@@ -296,7 +371,10 @@
                                     </tr>
                                 </thead>
                                 <tbody id="driverDuesContent">
-                                    <tr><td colspan="7" style="text-align:center; padding:3rem; opacity:0.5;">Calculating dues...</td></tr>
+                                    <tr>
+                                        <td colspan="7" style="text-align:center; padding:3rem; opacity:0.5;">
+                                            Calculating dues...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -318,7 +396,10 @@
                                     </tr>
                                 </thead>
                                 <tbody id="salariesContent">
-                                    <tr><td colspan="5" style="text-align:center; padding:3rem; opacity:0.5;">Loading driver list...</td></tr>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; padding:3rem; opacity:0.5;">Loading
+                                            driver list...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -330,15 +411,19 @@
         <!-- Reports -->
         <section id="reports" class="page-section">
             <div class="glass-panel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 20px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 20px;">
                     <h2 style="font-size: 2.2rem; color: var(--accent); margin-bottom: 0;">Resource Reports</h2>
                     <div style="display: flex; gap: 10px;">
-                        <button class="action-btn" onclick="generateReport()"><i class="fas fa-sync"></i> Generate</button>
-                        <button class="action-btn export-btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+                        <button class="action-btn" onclick="generateReport()"><i class="fas fa-sync"></i>
+                            Generate</button>
+                        <button class="action-btn export-btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i>
+                            Export CSV</button>
                     </div>
                 </div>
 
-                <div class="report-controls" style="margin-bottom: 2.5rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 15px;">
+                <div class="report-controls"
+                    style="margin-bottom: 2.5rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 15px;">
                     <div class="control-group">
                         <label>Report Type</label>
                         <select id="reportType" class="report-select" onchange="toggleReportFilters(this)">
@@ -384,7 +469,10 @@
                     <table class="report-table">
                         <thead id="reportHeader"></thead>
                         <tbody id="reportContent">
-                            <tr><td colspan="15" style="text-align: center; padding: 4rem; opacity: 0.5;">Select filters and click Generate...</td></tr>
+                            <tr>
+                                <td colspan="15" style="text-align: center; padding: 4rem; opacity: 0.5;">Select filters
+                                    and click Generate...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -402,8 +490,8 @@
         async function refreshDashboard() {
             const res = await SupabaseService.getDashboardMetrics();
             const grid = document.getElementById('dashboard-tiles');
-            const format = (n) => parseFloat(n || 0).toLocaleString('en-IN', {maximumFractionDigits: 0});
-            const createDetails = (details) => Object.entries(details).map(([k,v])=>`
+            const format = (n) => parseFloat(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            const createDetails = (details) => Object.entries(details).map(([k, v]) => `
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 5px 0;">
                     <span style="opacity: 0.6;">${k}:</span><span style="color: white; font-weight: 600;">${v}</span>
                 </div>
@@ -443,7 +531,7 @@
             document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(id).classList.add('active'); el.classList.add('active');
-            if(id === 'sales') loadSettlements();
+            if (id === 'sales') loadSettlements();
         }
 
         function toggleSalesSub(id, btn) {
@@ -452,7 +540,7 @@
             document.getElementById('dealer-sale').style.display = (id === 'dealer-sale') ? 'block' : 'none';
             document.querySelectorAll('#sales .add-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(id === 'line-sale') loadSettlements();
+            if (id === 'line-sale') loadSettlements();
         }
 
         function toggleDealerSub(id, btn) {
@@ -477,8 +565,8 @@
             try {
                 const results = await SupabaseService.getDriversWithSummary();
                 const content = document.getElementById('salariesContent');
-                if(!content) return;
-                if(!results || !results.length) { content.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem; opacity: 0.5;">No drivers found.</td></tr>'; return; }
+                if (!content) return;
+                if (!results || !results.length) { content.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem; opacity: 0.5;">No drivers found.</td></tr>'; return; }
                 content.innerHTML = results.map(d => {
                     const due = parseFloat(d.TOTAL_DUE || 0);
                     return `
@@ -526,12 +614,12 @@
             try {
                 const results = await SupabaseService.getDriverDues();
                 const content = document.getElementById('driverDuesContent');
-                if(!content) return;
-                
+                if (!content) return;
+
                 // Clear state
-                if(!results || !results.length) { 
-                    content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; opacity: 0.5;">No pending dues found.</td></tr>'; 
-                    return; 
+                if (!results || !results.length) {
+                    content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; opacity: 0.5;">No pending dues found.</td></tr>';
+                    return;
                 }
 
                 content.innerHTML = results.map(d => {
@@ -539,7 +627,7 @@
                     const bill = parseFloat(d.TOTAL_AMOUNT || 0);
                     const paid = parseFloat(d.PAID_BY_CUSTOMER || 0);
                     const due = parseFloat(d.DRIVER_DUE || d.DUE || 0);
-                    
+
                     return `
                         <tr>
                             <td>${dateVal}</td>
@@ -563,20 +651,20 @@
             } catch (err) {
                 console.error("Dashboard Dues UI Error:", err);
                 const content = document.getElementById('driverDuesContent');
-                if(content) content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#ff595e;">Sync Error. Please Refresh Page.</td></tr>';
+                if (content) content.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:3rem; color:#ff595e;">Sync Error. Please Refresh Page.</td></tr>';
             }
         }
 
         async function payDriverDue(id, maxAmt) {
             const input = document.getElementById(`pay_due_${id}`);
             const amt = parseFloat(input.value || 0);
-            
-            if(amt <= 0) { alert("Please enter a valid amount."); return; }
-            if(amt > maxAmt + 0.01) { alert("Payment cannot exceed total due amount."); return; }
 
-            if(confirm(`Confirm payment of ₹${amt.toFixed(2)} for this due?`)) {
+            if (amt <= 0) { alert("Please enter a valid amount."); return; }
+            if (amt > maxAmt + 0.01) { alert("Payment cannot exceed total due amount."); return; }
+
+            if (confirm(`Confirm payment of ₹${amt.toFixed(2)} for this due?`)) {
                 const res = await SupabaseService.payDriverDue(id, amt);
-                if(!res.error) {
+                if (!res.error) {
                     alert("Payment Recorded Successfully!");
                     fetchDriverDues();
                     refreshDashboard();
@@ -589,68 +677,107 @@
         // Bulletproof Local Tracking for Instant Removal
         window.locally_settled = window.locally_settled || [];
 
-        // Feature Restoration: Line Settlement
+        // Feature Restoration: Line Settlement (with expand/collapse)
         async function loadSettlements() {
             try {
                 let dispatches = await SupabaseService.getTodaysDispatches();
-                
+
                 // CRITICAL: Filter out locally settled IDs immediately
                 dispatches = dispatches.filter(d => !window.locally_settled.includes(String(d.id)));
+
+                // Store dispatch data globally so addCustRow knows which products were loaded
+                window.dispatchData = window.dispatchData || {};
+                dispatches.forEach(s => { window.dispatchData[String(s.id)] = s; });
 
                 const container = document.getElementById('lineSettlementContainer');
                 if (!dispatches || !dispatches.length) {
                     container.innerHTML = "<div style='text-align:center; padding: 5rem; opacity: 0.3;'><i class='fas fa-check-circle' style='font-size: 3rem; margin-bottom: 1rem;'></i><br>All trips settled.</div>";
                     return;
                 }
-                
-                container.innerHTML = dispatches.map(s => `
-                    <div class="glass-panel" style="margin-bottom: 3rem; padding: 2.5rem; border-left: 5px solid var(--accent);">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
-                            <div>
-                                <div style="font-size: 1.6rem; font-weight: 800;">${s.VEHICLE_NO} <span style="font-weight: 300; opacity: 0.5;">|</span> ${s.DRIVER}</div>
-                                <div style="color: var(--accent); font-weight: 600; font-size: 0.9rem; margin-top: 5px;">ROUTE: ${s.ROUTE}</div>
-                            </div>
-                        </div>
-                        
-                        <form onsubmit="handleSettlement(event, '${s.id}', '${s.VEHICLE_NO}', '${s.DRIVER}', '${encodeURIComponent(JSON.stringify(s))}')">
-                            <div class="section-title">1. Return Stock (Returns)</div>
-                            <div class="return-grid">
-                                ${["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].filter(k=>s[k]>0).map(k=>`
-                                    <div class="return-input-group">
-                                        <label>${k} (Loaded: ${s[k]})</label>
-                                        <input type="number" name="return_${k.toLowerCase()}" value="0" max="${s[k]}" oninput="calcNet(${s[k]}, this); liveValidate('${s.id}')">
-                                        <div class="net-sold-badge">Sold: ${s[k]}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
 
-                            <div class="section-title" style="margin-top: 3rem;">2. Customer Wise Sales Data</div>
-                            <div id="customers_${s.id}">
-                                <div class="customer-entry-header">
-                                    <div>Customer Name</div>
-                                    <div>Quantities (Sold)</div>
-                                    <div>Rate</div>
-                                    <div>Total</div>
-                                    <div></div>
+                // Render compact dispatch list — settlement form hidden by default
+                container.innerHTML = `
+                    <div style="font-size:0.85rem; opacity:0.5; margin-bottom:1.2rem; letter-spacing:1px; text-transform:uppercase;">
+                        ${dispatches.length} Pending Dispatch${dispatches.length > 1 ? 'es' : ''} — Tap Expand to Settle
+                    </div>
+                    ${dispatches.map(s => {
+                    const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+                    const totalLoaded = products.reduce((sum, k) => sum + (parseInt(s[k]) || 0), 0);
+                    const loadedSummary = products.filter(k => s[k] > 0).map(k => `<span style="background:rgba(251,140,0,0.12); color:var(--accent); padding:2px 8px; border-radius:20px; font-size:0.78rem; font-weight:700;">${k}:${s[k]}</span>`).join(' ');
+
+                    return `
+                        <div class="dispatch-list-card" id="card_${s.id}">
+                            <!-- Compact Summary Row -->
+                            <div class="dispatch-summary-row" onclick="toggleSettle('${s.id}')">
+                                <div class="dispatch-info">
+                                    <div class="dispatch-vehicle">
+                                        <i class="fas fa-truck" style="color:var(--accent); margin-right:8px;"></i>
+                                        <span style="font-weight:800; font-size:1.1rem;">${s.VEHICLE_NO}</span>
+                                        <span style="opacity:0.4; margin: 0 8px;">|</span>
+                                        <span style="font-weight:500;">${s.DRIVER}</span>
+                                    </div>
+                                    <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                                        <span style="font-size:0.78rem; opacity:0.6; margin-right:4px;">
+                                            <i class="fas fa-route" style="margin-right:3px;"></i>${s.ROUTE}
+                                        </span>
+                                        <span style="opacity:0.3;">·</span>
+                                        <span style="font-size:0.78rem; opacity:0.6;">Total Loaded: <b style="color:white;">${totalLoaded}</b> units</span>
+                                    </div>
+                                    <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:5px;">${loadedSummary}</div>
+                                </div>
+                                <div class="dispatch-expand-btn" id="expand_btn_${s.id}">
+                                    <i class="fas fa-chevron-down" style="margin-right:6px; transition:transform 0.3s;"></i> Expand
                                 </div>
                             </div>
-                            <button type="button" class="add-mini-btn" style="margin-top: 1rem;" onclick="addCustRow('${s.id}')">
-                                <i class="fas fa-plus"></i> Add Another Customer
-                            </button>
 
-                            <div class="section-title" style="margin-top: 3rem;">3. Final Settlement Collection</div>
-                            <div class="line-form-grid" style="background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 15px;">
-                                <div class="form-input-group"><label>Total Bill Amount</label><input type="number" name="total_amount" id="total_${s.id}" required></div>
-                                <div class="form-input-group"><label>Actually Collected</label><input type="number" name="paid_by_customer" required></div>
-                                <div class="form-input-group"><label>Expenses (Petrol/Food)</label><input type="number" name="expenses" value="0"></div>
-                                <div class="form-input-group"><label>Cash Handover to Office</label><input type="number" name="cash_received" required></div>
+                            <!-- Collapsible Settlement Form -->
+                            <div class="dispatch-settle-form" id="settle_${s.id}" style="display:none; margin-top:2rem; border-top:1px solid rgba(251,140,0,0.2); padding-top:2rem;">
+                                <form onsubmit="handleSettlement(event, '${s.id}', '${s.VEHICLE_NO}', '${s.DRIVER}', '${encodeURIComponent(JSON.stringify(s))}')">
+                                    <div class="section-title">1. Return Stock (Returns)</div>
+                                    <div class="return-grid">
+                                        ${products.filter(k => s[k] > 0).map(k => `
+                                            <div class="return-input-group">
+                                                <label>${k} (Loaded: ${s[k]})</label>
+                                                <input type="number" name="return_${k.toLowerCase()}" value="0" max="${s[k]}" oninput="calcNet(${s[k]}, this); liveValidate('${s.id}')">
+                                                <div class="net-sold-badge">Sold: ${s[k]}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+
+                                    <div class="section-title" style="margin-top:3rem;">2. Customer Wise Sales Data</div>
+                                    <div id="customers_${s.id}">
+                                        <div class="customer-entry-header">
+                                            <div>Customer Name</div>
+                                            <div>Quantities (Sold)</div>
+                                            <div>Rate</div>
+                                            <div>Total</div>
+                                            <div></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="add-mini-btn" style="margin-top:1rem;" onclick="addCustRow('${s.id}')">
+                                        <i class="fas fa-plus"></i> Add Another Customer
+                                    </button>
+
+                                    <div class="section-title" style="margin-top:3rem;">3. Final Settlement Collection</div>
+                                    <div class="line-form-grid" style="background:rgba(0,0,0,0.2); padding:2rem; border-radius:15px;">
+                                        <div class="form-input-group"><label>Total Bill Amount</label><input type="number" name="total_amount" id="total_${s.id}" oninput="calcDue('${s.id}')" required></div>
+                                        <div class="form-input-group"><label>Actually Collected</label><input type="number" name="paid_by_customer" required></div>
+                                        <div class="form-input-group"><label>Expenses (Petrol/Food)</label><input type="number" name="expenses" value="0" oninput="calcDue('${s.id}')"></div>
+                                        <div class="form-input-group"><label>Cash Handover to Office</label><input type="number" name="cash_received" required oninput="calcDue('${s.id}')"></div>
+                                    </div>
+                                    <div id="due_preview_${s.id}" style="margin-top:1.5rem; background:rgba(255,165,0,0.1); padding:1rem; border-radius:10px; border:1px dashed rgba(251,140,0,0.3); text-align:center;">
+                                        <span style="opacity:0.6; font-size:0.9rem;">Resulting Driver Due:</span>
+                                        <span class="due-val" style="color:var(--accent); font-weight:800; font-size:1.2rem; margin-left:10px;">₹0.00</span>
+                                    </div>
+                                    <button type="submit" class="save-production-btn" style="margin-top:2rem; width:100%;">Finalize Trip Settlement</button>
+                                </form>
                             </div>
-                            <button type="submit" class="save-production-btn" style="margin-top: 2rem; width: 100%;">Finalize Trip Settlement</button>
-                        </form>
-                    </div>
-                `).join('');
-                
-                // Delay slightly to ensure DOM is ready
+                        </div>
+                        `;
+                }).join('')}
+                `;
+
+                // Pre-populate first customer row for each dispatch (after DOM is ready)
                 setTimeout(() => {
                     dispatches.forEach(s => addCustRow(s.id));
                 }, 100);
@@ -661,23 +788,60 @@
             }
         }
 
+        // Toggle expand/collapse for a specific dispatch card
+        function toggleSettle(sid) {
+            const form = document.getElementById(`settle_${sid}`);
+            const btn = document.getElementById(`expand_btn_${sid}`);
+            const icon = btn.querySelector('i');
+            const isOpen = form.style.display !== 'none';
+
+            if (isOpen) {
+                form.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+                btn.innerHTML = '<i class="fas fa-chevron-down" style="margin-right:6px; transition:transform 0.3s;"></i> Expand';
+            } else {
+                form.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-chevron-up" style="margin-right:6px;"></i> Collapse';
+                // Smooth scroll to the expanded card
+                document.getElementById(`card_${sid}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
         function addCustRow(sid) {
             const cont = document.getElementById(`customers_${sid}`);
+            const dispatch = (window.dispatchData || {})[String(sid)] || {};
+            const ALL_PRODUCTS = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+            // Only show products that were actually dispatched for this vehicle
+            const activeProducts = ALL_PRODUCTS.filter(k => (parseInt(dispatch[k]) || 0) > 0);
+            // Fallback: if dispatch data not found, show all
+            const products = activeProducts.length > 0 ? activeProducts : ALL_PRODUCTS;
+
             const div = document.createElement('div');
             div.className = 'customer-row';
             div.innerHTML = `
                 <input type="text" class="cust-name" placeholder="Name/Shop">
                 <div class="cust-qty-grid">
-                    ${["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].map(k=>`
-                        <div class="mini-qty" style="height: auto; padding: 5px;">
-                            <span style="font-size: 0.6rem; opacity: 0.8; font-weight: 800; color: var(--accent);">${k}</span>
-                            <input type="number" class="q-${k.toLowerCase()}" data-product="${k}" value="0" oninput="liveValidate('${sid}', this)" style="width: 100%; border-bottom: 1px solid rgba(251, 140, 0, 0.4); margin-bottom: 5px;">
-                            <input type="number" class="r-${k.toLowerCase()}" placeholder="Rate" oninput="sumCustBill(this)" style="width: 100%; font-size: 0.7rem; background: rgba(0,0,0,0.1); border-radius: 4px; padding: 2px;">
+                    ${products.map(k => `
+                        <div class="mini-qty" style="height:auto; padding:5px;">
+                            <span style="font-size:0.65rem; font-weight:800; color:var(--accent); opacity:0.9;">${k}</span>
+                            <input type="number" class="q-${k.toLowerCase()}" data-product="${k}" value="0"
+                                oninput="liveValidate('${sid}', this)"
+                                style="width:100%; border:1px solid rgba(251,140,0,0.4); border-radius:6px; margin-bottom:4px; padding:3px 4px; background:rgba(0,0,0,0.15); color:white; text-align:center;">
+                            <input type="number" class="r-${k.toLowerCase()}" placeholder="₹ Rate"
+                                oninput="sumCustBill(this)"
+                                style="width:100%; font-size:0.7rem; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:2px 4px; color:white; text-align:center;">
                         </div>
                     `).join('')}
+                    ${ALL_PRODUCTS.filter(k => !products.includes(k)).map(k => `
+                        <input type="hidden" class="q-${k.toLowerCase()}" value="0">
+                        <input type="hidden" class="r-${k.toLowerCase()}" value="0">
+                    `).join('')}
                 </div>
-                <div class="cust-bill-val" style="font-weight:700; color:var(--accent); min-width: 100px; text-align: right;">₹0.00</div>
-                <button type="button" onclick="this.parentElement.remove(); liveValidate('${sid}'); sumCustBill()" style="background:none; border:none; color:#ff595e; cursor:pointer; padding-left: 1rem;"><i class="fas fa-trash"></i></button>
+                <div class="cust-bill-val" style="font-weight:700; color:var(--accent); min-width:90px; text-align:right;">₹0.00</div>
+                <button type="button" onclick="this.parentElement.remove(); liveValidate('${sid}'); sumCustBill(null,'${sid}')"
+                    style="background:none; border:none; color:#ff595e; cursor:pointer; padding-left:0.8rem; font-size:1rem;">
+                    <i class="fas fa-trash"></i>
+                </button>
             `;
             cont.appendChild(div);
         }
@@ -688,62 +852,102 @@
             const form = container.closest('form');
             if (!form) return;
             const fd = new FormData(form);
-            const loaded = JSON.parse(decodeURIComponent(form.getAttribute('onsubmit').match(/'({%22.*%22})'/)[1]));
             
-            // Calculate Net Available for each product
+            // Safer lookup using the window.dispatchData we stored in loadSettlements
+            const loaded = (window.dispatchData || {})[String(sid)] || {};
+
+            // Calculate Net Available for each product (Loaded - Current Returns)
             const available = {};
             ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
                 const ret = parseInt(fd.get(`return_${k.toLowerCase()}`) || 0);
                 available[k] = Math.max(0, (loaded[k] || 0) - ret);
             });
 
-            // Sum up what's currently in the rows
+            // Sum up what's currently entered across all customer rows
             const sums = {};
             const rows = document.querySelectorAll(`#customers_${sid} .customer-row`);
             rows.forEach(row => {
                 ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
-                    const val = parseInt(row.querySelector(`.q-${k.toLowerCase()}`).value || 0);
-                    sums[k] = (sums[k] || 0) + val;
+                    const inp = row.querySelector(`.q-${k.toLowerCase()}`);
+                    sums[k] = (sums[k] || 0) + (parseInt((inp && inp.value) || 0));
                 });
             });
 
-            // Highlighting
+            // Highlight each visible quantity input: red box = exceeds available
             rows.forEach(row => {
                 ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
                     const input = row.querySelector(`.q-${k.toLowerCase()}`);
+                    if (!input || input.type === 'hidden') return;
+                    
                     if (sums[k] > available[k]) {
-                        input.style.color = "#ff595e";
-                        input.style.borderColor = "#ff595e";
+                        // AGGRESSIVE RED ERROR STYLE
+                        input.style.color = "#ffffff";
+                        input.style.borderColor = "#ff4757";
+                        input.style.backgroundColor = "rgba(255, 71, 87, 0.45)"; 
+                        input.style.boxShadow = "0 0 8px rgba(255, 71, 87, 0.6)";
+                        input.style.fontWeight = "bold";
                     } else {
+                        // NORMAL STYLE
                         input.style.color = "white";
-                        input.style.borderColor = "var(--accent)";
+                        input.style.borderColor = "rgba(251, 140, 0, 0.4)";
+                        input.style.backgroundColor = "rgba(0, 0, 0, 0.15)";
+                        input.style.boxShadow = "none";
+                        input.style.fontWeight = "normal";
                     }
                 });
             });
-            
+
             if (el) sumCustBill(el);
         }
 
-        function sumCustBill(el) {
-            const rows = document.querySelectorAll('.customer-row');
+        // sid is passed when the triggering element has been removed (delete row)
+        function sumCustBill(el, sid) {
+            // Scope STRICTLY to the form that contains the changed input
+            let form = null;
+            if (el) {
+                form = el.closest('form');
+            } else if (sid) {
+                const cont = document.getElementById(`customers_${sid}`);
+                if (cont) form = cont.closest('form');
+            }
+            if (!form) return; // nothing to update
+
+            // Only sum rows inside THIS form
+            const rows = form.querySelectorAll('.customer-row');
             let grandTotal = 0;
             rows.forEach(row => {
                 let rowTotal = 0;
                 ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
-                    const q = parseFloat(row.querySelector(`.q-${k.toLowerCase()}`).value || 0);
-                    const r = parseFloat(row.querySelector(`.r-${k.toLowerCase()}`).value || 0);
+                    const qInp = row.querySelector(`.q-${k.toLowerCase()}`);
+                    const rInp = row.querySelector(`.r-${k.toLowerCase()}`);
+                    const q = parseFloat((qInp && qInp.value) || 0);
+                    const r = parseFloat((rInp && rInp.value) || 0);
                     rowTotal += (q * r);
                 });
-                row.querySelector('.cust-bill-val').innerText = `₹${rowTotal.toFixed(2)}`;
+                const billEl = row.querySelector('.cust-bill-val');
+                if (billEl) billEl.innerText = `₹${rowTotal.toFixed(2)}`;
                 grandTotal += rowTotal;
             });
-            
-            // Update the form total amount
-            if(el) {
-                const form = el.closest('form');
-                const totalInp = form.querySelector('[name="total_amount"]');
-                if(totalInp) totalInp.value = grandTotal.toFixed(2);
+
+            // Push grand total into the settlement Total Bill Amount field
+            const totalInp = form.querySelector('[name="total_amount"]');
+            if (totalInp) {
+                totalInp.value = grandTotal.toFixed(2);
+                if (sid) calcDue(sid); // Update the preview when bill changes
             }
+        }
+
+        function calcDue(sid) {
+            const form = document.querySelector(`#settle_${sid} form`);
+            if (!form) return;
+            const total = parseFloat(form.querySelector('[name="total_amount"]').value || 0);
+            const exp = parseFloat(form.querySelector('[name="expenses"]').value || 0);
+            const cash = parseFloat(form.querySelector('[name="cash_received"]').value || 0);
+            
+            // Formula: Total Bill - Expenses - Cash Handover
+            const due = Math.max(0, (total - exp) - cash);
+            const preview = document.querySelector(`#due_preview_${sid} .due-val`);
+            if (preview) preview.innerText = `₹${due.toFixed(2)}`;
         }
 
         function calcNet(loaded, input) {
@@ -775,21 +979,34 @@
                 });
             });
 
-            // 3. Perform the check
+            // 3. Validate customer entries against net sold
+            const unmatched = [];
             for (let k of ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"]) {
-                if ((rowTotalSold[k] || 0) > netSold[k]) {
-                    alert(`ERROR: Total ${k} sold to customers (${rowTotalSold[k]}) is GREATER than available stock (${netSold[k]}).\n\nPlease check your Returns or Customer entries.`);
+                const custTotal = rowTotalSold[k] || 0;
+                
+                // CRITICAL: Block if user tries to settle more than what was sold/available
+                if (custTotal > netSold[k]) {
+                    alert(`❌ VALIDATION ERROR: Total ${k} entered for customers (${custTotal}) exceeds available sold stock (${netSold[k]}).\n\nPlease correct the quantities before finalizing.`);
                     return;
                 }
+
+                // Block if user hasn't accounted for all sold stock
+                if (netSold[k] > 0 && custTotal < netSold[k]) {
+                    unmatched.push(`${k}: Loaded/Sold ${netSold[k]} but only ${custTotal} entered in customer rows`);
+                }
+            }
+            if (unmatched.length > 0) {
+                alert(`⚠️ Incomplete Customer Data!\n\nSome items have not been fully accounted for:\n\n${unmatched.join('\n')}\n\nPlease fill in all customer rows before finalizing.`);
+                return;
             }
 
             data.SALES_ID = id; data.VEHICLE_NO = vno; data.DRIVER = driver;
-            
+
             // Extract detailed customer rows for granular reporting
             const customerRows = [];
             document.querySelectorAll(`#customers_${id} .customer-row`).forEach(row => {
                 const custName = row.querySelector('.cust-name').value;
-                if(!custName) return;
+                if (!custName) return;
                 const custData = {
                     SALES_ID: String(id), VEHICLE_NO: vno, DRIVER: driver, CUSTOMER_NAME: custName,
                     DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ')
@@ -802,26 +1019,26 @@
             });
 
             // Populate trip-level rates for the summary report (take from first row as reference)
-            if(customerRows.length > 0) {
+            if (customerRows.length > 0) {
                 ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
                     data[`RATE_${k}`] = customerRows[0][`RATE_${k}`] || 0;
                 });
             }
 
             const res = await SupabaseService.saveCashEntry(data);
-            
+
             if (!res.error) {
                 // Save detailed customer rows
-                if(customerRows.length > 0) await SupabaseService.saveCustomerSales(customerRows);
+                if (customerRows.length > 0) await SupabaseService.saveCustomerSales(customerRows);
 
                 // FORCE REMOVE FROM SCREEN IMMEDIATELY
                 window.locally_settled.push(String(id));
-                const card = e.target.closest('.glass-panel');
+                const card = document.getElementById(`card_${id}`);
                 if (card) {
-                    card.style.transition = 'all 0.3s ease';
+                    card.style.transition = 'all 0.35s ease';
                     card.style.opacity = '0';
-                    card.style.transform = 'scale(0.95)';
-                    setTimeout(() => card.remove(), 300);
+                    card.style.transform = 'scale(0.97) translateY(-8px)';
+                    setTimeout(() => card.remove(), 350);
                 }
 
                 alert("Settlement Successful!");
@@ -869,10 +1086,10 @@
 
         async function fetchDealerLedger() {
             const date = document.getElementById('ledgerDate').value;
-            if(!date) return;
+            if (!date) return;
             const data = await SupabaseService.fetchDealerDispatches(date);
             const content = document.getElementById('ledgerContent');
-            if(!data.length) { content.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:3rem;">No dispatches found.</td></tr>'; return; }
+            if (!data.length) { content.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:3rem;">No dispatches found.</td></tr>'; return; }
             content.innerHTML = data.map(d => {
                 const pending = (parseFloat(d.TOTAL_AMOUNT || 0) - d.PAID_AMOUNT);
                 const isPaid = pending <= 0.01;
@@ -909,7 +1126,7 @@
 
         async function processPayment(id, name, total) {
             const amt = document.getElementById(`pay_${id}`).value;
-            if(amt && parseFloat(amt) > 0) {
+            if (amt && parseFloat(amt) > 0) {
                 await SupabaseService.updateDealerPayment(id, name, total, parseFloat(amt));
                 alert("Payment Recorded!");
                 fetchDealerLedger(); refreshDashboard();
@@ -931,28 +1148,28 @@
             const timeframe = document.getElementById('reportTimeframe').value;
             const specificDate = document.getElementById('reportDate').value;
             let target = '';
-            if(type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
-            else if(type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
-            else if(type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
-            
+            if (type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
+            else if (type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
+            else if (type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
+
             const tableHeader = document.getElementById('reportHeader');
             const tableBody = document.getElementById('reportContent');
 
             const data = await SupabaseService.getReportData(type, timeframe, target, specificDate);
             window.currentReport = data;
-            
-            if(!data || !data.length) { 
-                tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records found.</td></tr>'; 
-                return; 
+
+            if (!data || !data.length) {
+                tableBody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:3rem;">No records found.</td></tr>';
+                return;
             }
 
             const keys = Object.keys(data[0]);
-            tableHeader.innerHTML = `<tr>${keys.map(k=>`<th>${k.replace(/_/g,' ')}</th>`).join('')}</tr>`;
-            tableBody.innerHTML = data.map(r=>`<tr>${keys.map(k=>`<td>${r[k]??''}</td>`).join('')}</tr>`).join('');
+            tableHeader.innerHTML = `<tr>${keys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
+            tableBody.innerHTML = data.map(r => `<tr>${keys.map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('');
         }
 
         function exportCSV() {
-            if(!window.currentReport) return;
+            if (!window.currentReport) return;
             SupabaseService.exportToCSV(window.currentReport, "Suguna_Report");
         }
 
@@ -964,10 +1181,10 @@
             const dealers = await SupabaseService.getDealers();
             const heads = await SupabaseService.getAccountHeads();
 
-            document.getElementById('vehicleSelect').innerHTML = vehs.map(v=>`<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
-            
-            document.getElementById('routeSelect').innerHTML = '<option value="">--Select Route--</option>' + routes.map(r=>`<option value="${r.ROUTE}">${r.ROUTE}</option>`).join('');
-            
+            document.getElementById('vehicleSelect').innerHTML = vehs.map(v => `<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
+
+            document.getElementById('routeSelect').innerHTML = '<option value="">--Select Route--</option>' + routes.map(r => `<option value="${r.ROUTE}">${r.ROUTE}</option>`).join('');
+
             const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
             document.getElementById('dispatchProductContainer').innerHTML = products.map(k => `
                 <div class="input-tile">
@@ -976,20 +1193,20 @@
                 </div>
             `).join('');
 
-            document.getElementById('dealerSelect').innerHTML = '<option value="">--Select Dealer--</option>' + dealers.map(d=>`<option value="${d.NAME}" data-place="${d.PLACE}" data-prices='${JSON.stringify(d)}'>${d.NAME}</option>`).join('');
-            document.getElementById('ledgerHeadSelect').innerHTML = heads.map(h=>`<option value="${h.id}|${h.NAME}">${h.NAME}</option>`).join('');
-            document.getElementById('editDealerSelect').innerHTML = '<option value="">--Select Dealer--</option>' + dealers.map(d=>`<option value="${d.NAME}" data-prices='${JSON.stringify(d)}'>${d.NAME}</option>`).join('');
-            document.getElementById('reportDealer').innerHTML = '<option value="All Dealers">All Dealers</option>' + dealers.map(d=>`<option value="${d.NAME}">${d.NAME}</option>`).join('');
-            document.getElementById('reportLedgerHead').innerHTML = '<option value="All Heads">All Heads</option>' + heads.map(h=>`<option value="${h.NAME}">${h.NAME}</option>`).join('');
-            document.getElementById('reportVehicle').innerHTML = '<option value="All Vehicles">All Vehicles</option>' + vehs.map(v=>`<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
+            document.getElementById('dealerSelect').innerHTML = '<option value="">--Select Dealer--</option>' + dealers.map(d => `<option value="${d.NAME}" data-place="${d.PLACE}" data-prices='${JSON.stringify(d)}'>${d.NAME}</option>`).join('');
+            document.getElementById('ledgerHeadSelect').innerHTML = heads.map(h => `<option value="${h.id}|${h.NAME}">${h.NAME}</option>`).join('');
+            document.getElementById('editDealerSelect').innerHTML = '<option value="">--Select Dealer--</option>' + dealers.map(d => `<option value="${d.NAME}" data-prices='${JSON.stringify(d)}'>${d.NAME}</option>`).join('');
+            document.getElementById('reportDealer').innerHTML = '<option value="All Dealers">All Dealers</option>' + dealers.map(d => `<option value="${d.NAME}">${d.NAME}</option>`).join('');
+            document.getElementById('reportLedgerHead').innerHTML = '<option value="All Heads">All Heads</option>' + heads.map(h => `<option value="${h.NAME}">${h.NAME}</option>`).join('');
+            document.getElementById('reportVehicle').innerHTML = '<option value="All Vehicles">All Vehicles</option>' + vehs.map(v => `<option value="${v.VEHICLE_NO}">${v.VEHICLE_NO}</option>`).join('');
         }
 
         // Form Submit Listeners
         window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('productionForm').onsubmit = async (e) => { 
-                e.preventDefault(); 
-                const res = await SupabaseService.saveProduction(Object.fromEntries(new FormData(e.target))); 
-                if(res.error) alert("Error: " + res.error.message);
+            document.getElementById('productionForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const res = await SupabaseService.saveProduction(Object.fromEntries(new FormData(e.target)));
+                if (res.error) alert("Error: " + res.error.message);
                 else { alert("Production Saved"); refreshDashboard(); }
             };
 
@@ -998,7 +1215,7 @@
                 const fd = new FormData(e.target);
                 const data = Object.fromEntries(fd);
                 const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
-                
+
                 let totalQty = 0;
                 products.forEach(k => {
                     const qty = parseInt(data[k] || 0);
@@ -1010,12 +1227,12 @@
 
                 data.QUANTITY = totalQty;
                 data.TYPE = "LINE";
-                
+
                 const res = await SupabaseService.saveSales(data);
-                if (res.success) { 
-                    alert("Dispatch Recorded Successfully!"); 
-                    e.target.reset(); 
-                    refreshDashboard(); 
+                if (res.success) {
+                    alert("Dispatch Recorded Successfully!");
+                    e.target.reset();
+                    refreshDashboard();
                 } else {
                     alert("Error: " + res.error.message);
                 }
@@ -1031,7 +1248,7 @@
                 d.TOTAL_AMOUNT = parseFloat(document.getElementById('dealerTotalAmount').innerText || 0);
                 d.PAID_AMOUNT = parseFloat(document.getElementById('dealerAmountPaid').value || 0);
                 d.TYPE = "DEALER";
-                
+
                 const res = await SupabaseService.saveSales(d);
                 if (res.success) {
                     alert("Dealer Dispatch Recorded!");
@@ -1056,10 +1273,10 @@
 
         async function confirmEndDay() { if (confirm("End day and rollover stock?")) { await SupabaseService.endDayProcess(); alert("Day Closed!"); window.location.reload(); } }
         function addNewRoute() { const r = prompt("Enter Route Name:"); if (r) SupabaseService.addRoute(r).then(() => startApp()); }
-        
+
         function createBubbles() {
             const container = document.getElementById('bubbleContainer');
-            if(!container) return;
+            if (!container) return;
             for (let i = 0; i < 20; i++) {
                 const b = document.createElement('div'); b.className = 'bubble';
                 const s = Math.random() * 60 + 10 + 'px';
@@ -1072,4 +1289,5 @@
         createBubbles(); startApp();
     </script>
 </body>
+
 </html>
