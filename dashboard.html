@@ -1689,7 +1689,11 @@
                 e.preventDefault();
                 const res = await SupabaseService.saveProduction(Object.fromEntries(new FormData(e.target)));
                 if (res.error) alert("Error: " + res.error.message);
-                else { alert("Production Saved"); refreshDashboard(); }
+                else { 
+                    alert("Production Saved"); 
+                    e.target.reset();
+                    refreshDashboard(); 
+                }
             };
 
             document.getElementById('salesDispatchForm').onsubmit = async (e) => {
@@ -1729,7 +1733,6 @@
                 d.QUANTITY = totalQty;
                 d.TOTAL_AMOUNT = parseFloat(document.getElementById('dealerTotalAmount').innerText || 0);
                 d.PAID_AMOUNT = parseFloat(document.getElementById('dealerAmountPaid').value || 0);
-                d.DUE = d.TOTAL_AMOUNT - d.PAID_AMOUNT;
                 d.TYPE = "DEALER";
 
                 const res = await SupabaseService.saveSales(d);
@@ -1746,12 +1749,14 @@
                 e.preventDefault();
                 const fd = new FormData(e.target); const h = fd.get('head_id_name').split('|');
                 await SupabaseService.saveAccountTransaction({ HEAD_NAME: h[1], PURPOSE: fd.get('PURPOSE'), CREDIT: fd.get('CREDIT'), DEBIT: fd.get('DEBIT'), TO_BE_PAID: fd.get('TO_BE_PAID') });
-                alert("Ledger Entry Saved"); refreshDashboard();
+                alert("Ledger Entry Saved"); 
+                e.target.reset();
+                refreshDashboard();
             };
 
-            document.getElementById('addHeadForm').onsubmit = async (e) => { e.preventDefault(); await SupabaseService.addAccountHead(new FormData(e.target).get('NAME')); alert("Head Created"); startApp(); };
-            document.getElementById('addDealerForm').onsubmit = async (e) => { e.preventDefault(); await SupabaseService.addDealer(Object.fromEntries(new FormData(e.target))); alert("Dealer Added"); startApp(); };
-            document.getElementById('updatePricesForm').onsubmit = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await SupabaseService.updateDealerPrices(fd.get('dealer_name'), Object.fromEntries(fd)); alert("Prices Updated"); startApp(); };
+            document.getElementById('addHeadForm').onsubmit = async (e) => { e.preventDefault(); await SupabaseService.addAccountHead(new FormData(e.target).get('NAME')); alert("Head Created"); e.target.reset(); startApp(); };
+            document.getElementById('addDealerForm').onsubmit = async (e) => { e.preventDefault(); await SupabaseService.addDealer(Object.fromEntries(new FormData(e.target))); alert("Dealer Added"); e.target.reset(); startApp(); };
+            document.getElementById('updatePricesForm').onsubmit = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await SupabaseService.updateDealerPrices(fd.get('dealer_name'), Object.fromEntries(fd)); alert("Prices Updated"); e.target.reset(); startApp(); };
         });
 
         async function confirmEndDay() { if (confirm("End day and rollover stock?")) { await SupabaseService.endDayProcess(); alert("Day Closed!"); window.location.reload(); } }

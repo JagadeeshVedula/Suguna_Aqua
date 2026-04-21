@@ -152,11 +152,11 @@ const SupabaseService = {
             DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' '),
             VEHICLE_NO: data.VEHICLE_NO || data.vehicle_no,
             DRIVER: data.DRIVER || data.driver,
-            TOTAL_AMOUNT: parseFloat(data.TOTAL_AMOUNT || data.total_amount || 0),
-            PAID_BY_CUSTOMER: parseFloat(data.PAID_BY_CUSTOMER || data.paid_by_customer || 0),
-            EXPENSES: parseFloat(data.EXPENSES || data.expenses || 0),
-            CASH_RECEIVED: parseFloat(data.CASH_RECEIVED || data.cash_received || 0),
-            SALES_ID: String(data.SALES_ID || data.sales_id),
+            TOTAL_AMOUNT: parseFloat(data.total_amount || 0),
+            PAID_BY_CUSTOMER: parseFloat(data.paid_by_customer || 0),
+            EXPENSES: parseFloat(data.expenses || 0),
+            CASH_RECEIVED: parseFloat(data.cash_received || 0),
+            SALES_ID: String(data.SALES_ID),
             "250ML": parseInt(data["250ML"] || data["250ml"] || 0),
             "500ML": parseInt(data["500ML"] || data["500ml"] || 0),
             "1LTR": parseInt(data["1LTR"] || data["1ltr"] || 0),
@@ -165,14 +165,6 @@ const SupabaseService = {
             "20LTR": parseInt(data["20LTR"] || data["20ltr"] || 0),
             "BAGS": parseInt(data.BAGS || data.bags || 0)
         };
-        
-        // Capture rates (prices) for the summary entry
-        ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
-            payload[`RATE_${k}`] = parseFloat(data[`RATE_${k}`] || 0);
-        });
-
-        // Driver Due = Total Bill - Trip Expenses - Cash Handed Over to Office
-        payload.DUE = Math.max(0, (payload.TOTAL_AMOUNT - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
         return await _supabase.from('CASH').insert([payload]);
     },
 
@@ -499,25 +491,15 @@ const SupabaseService = {
     },
 
     async updateDealerPayment(sales_id, dealer_name, total_amount, amount_paid) {
-        const cashPayload = { 
-            VEHICLE_NO: "DEALER_PAYMENT", 
-            DRIVER: dealer_name, 
-            TOTAL_AMOUNT: total_amount, 
-            PAID_BY_CUSTOMER: amount_paid, 
-            CASH_RECEIVED: amount_paid, 
+        const data = { 
+            vehicle_no: "DEALER_PAYMENT", 
+            driver: dealer_name, 
+            total_amount: total_amount, 
+            paid_by_customer: amount_paid, 
+            cash_received: amount_paid, 
             SALES_ID: String(sales_id) 
         };
-        const res = await this.saveCashEntry(cashPayload);
-        
-        // Synchronize Sales table totals using exact ID match
-        const sid = Number(sales_id);
-        const { data: salesRow } = await _supabase.from('SALES').select('PAID_AMOUNT, TOTAL_AMOUNT').eq('id', sid).single();
-        if (salesRow) {
-            const newPaid = parseFloat(salesRow.PAID_AMOUNT || 0) + amount_paid;
-            const newDue = parseFloat(salesRow.TOTAL_AMOUNT || 0) - newPaid;
-            await _supabase.from('SALES').update({ PAID_AMOUNT: newPaid, DUE: newDue }).eq('id', sid);
-        }
-        return res;
+        return await this.saveCashEntry(data);
     },
 
     async getTrendData(startDate, endDate) {
