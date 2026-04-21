@@ -319,17 +319,20 @@ const SupabaseService = {
 
         if (type === "Production") {
             const { data } = await _supabase.from('PRODUCTION').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
-            return data || [];
+            return (data || []).map(r => { delete r.id; return r; });
         } else if (type === "Sales") {
-            let q = _supabase.from('CASH').select('*').gte('DATE', startStr);
+            let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr);
             if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
             const { data } = await q.order('DATE', { ascending: false });
-            return data || [];
+            return (data || []).map(r => {
+                delete r.id; delete r.SALES_ID; 
+                return r;
+            });
         } else if (type === "Detailed Line Sales") {
             let q = _supabase.from('LINE_CUSTOMER_SALES').select('*').gte('DATE', startStr);
             if (filter && filter !== 'All Vehicles') q = q.eq('VEHICLE_NO', filter);
             const { data } = await q.order('DATE', { ascending: false });
-            return data || [];
+            return (data || []).map(r => { delete r.id; delete r.SALES_ID; return r; });
         } else if (type === "Account Ledger") {
             let q = _supabase.from('ACCOUNT_TRANSACTIONS').select('*').gte('DATE', startStr);
             if (filter && filter !== "All Heads") q = q.eq('HEAD_NAME', filter);

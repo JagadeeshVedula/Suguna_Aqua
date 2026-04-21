@@ -1511,7 +1511,8 @@
                 return;
             }
 
-            const keys = Object.keys(data[0]);
+            const rawKeys = Object.keys(data[0]);
+            const keys = rawKeys.filter(k => k !== 'id' && k !== 'SALES_ID' && k !== 'DUE');
             tableHeader.innerHTML = `<tr>${keys.map(k => `<th>${k.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
             tableBody.innerHTML = data.map(r => `<tr>${keys.map(k => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('');
         }
