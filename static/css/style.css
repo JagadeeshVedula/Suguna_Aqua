@@ -1,13 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
-    --primary: #fb8c00; /* Deep Orange */
+    --primary: #fb8c00;
+    /* Deep Orange */
     --secondary: #001219;
-    --accent: #ffb74d; /* Light Orange */
+    --accent: #ffb74d;
+    /* Light Orange */
     --glass: rgba(0, 18, 25, 0.7);
-    --glass-border: rgba(251, 140, 0, 0.2); /* Orange tinted border */
-    --text: #ffa726; /* Global Orange Text */
-    --header-bg: rgba(0, 10, 15, 0.9);
+    --glass-border: rgba(251, 140, 0, 0.2);
+    /* Orange tinted border */
+    --text: #ffa726;
+    /* Global Orange Text */
+    --header-bg: rgba(0, 15, 20, 0.45);
 }
 
 * {
@@ -44,7 +48,7 @@ body {
     background-size: cover;
     background-position: center;
     transition: transform 1.5s ease;
-    filter: saturate(1) brightness(0.8);
+    filter: saturate(1.1) brightness(1.1) contrast(1.15);
 }
 
 .bg-overlay {
@@ -53,7 +57,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 50% 50%, rgba(0, 18, 25, 0.1) 0%, rgba(0, 10, 15, 0.9) 100%);
+    background: radial-gradient(circle at 50% 50%, rgba(0, 18, 25, 0.05) 0%, rgba(0, 10, 15, 0.7) 100%);
     animation: pulseGradient 10s infinite alternate;
 }
 
@@ -265,16 +269,16 @@ body {
 
 .header {
     background: var(--header-bg);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid var(--glass-border);
-    padding: 1rem 3rem;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(251, 140, 0, 0.35);
+    padding: 1.2rem 3rem;
     border-radius: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 10px 30px rgba(0, 119, 190, 0.1);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(251, 140, 0, 0.1);
     width: 90%;
     max-width: 1200px;
 }
@@ -438,29 +442,44 @@ body {
 }
 
 .tile-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: var(--accent);
     background: rgba(144, 224, 239, 0.1);
-    padding: 0.8rem;
-    border-radius: 15px;
+    padding: 1rem;
+    border-radius: 18px;
 }
 
 .tile-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-top: 1rem;
+    letter-spacing: 2px;
+    margin-top: 1.2rem;
 }
 
 .tile-value {
-    font-size: 2.4rem;
+    font-size: 2.9rem;
     font-weight: 900;
     color: #fffbeb;
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
     font-variant-numeric: tabular-nums;
-    text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.2);
+    text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.trend-up,
+.trend-down {
+    font-size: 2.0rem;
+    font-weight: 900;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.trend-up {
+    color: #00f5a0;
+}
+
+.trend-down {
+    color: #ff595e;
 }
 
 .tile-footer {
@@ -935,6 +954,13 @@ select option {
 }
 
 @keyframes settleReveal {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

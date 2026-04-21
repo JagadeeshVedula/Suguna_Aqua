@@ -501,27 +501,27 @@
                 <div class="tile">
                     <div class="tile-header"><i class="fas fa-wallet tile-icon"></i><span class="trend-up">${format(res.OPENING_BALANCE)}</span></div>
                     <div class="tile-label">Opening Stock Breakdown</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 0.8rem;">${createDetails(res.OPENING_DETAILS)}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 1.1rem;">${createDetails(res.OPENING_DETAILS)}</div>
                 </div>
                 <div class="tile">
                     <div class="tile-header"><i class="fas fa-industry tile-icon"></i><span class="trend-up">${format(res.PRODUCTION)}</span></div>
                     <div class="tile-label">Today's Production</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 0.8rem;">${createDetails(res.PROD_DETAILS)}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 1.1rem;">${createDetails(res.PROD_DETAILS)}</div>
                 </div>
                 <div class="tile">
                     <div class="tile-header"><i class="fas fa-chart-line tile-icon"></i><span class="trend-down">${format(res.SALES)}</span></div>
                     <div class="tile-label">Total Outward Sales</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 0.8rem;">${createDetails(res.SALES_DETAILS)}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 1.1rem;">${createDetails(res.SALES_DETAILS)}</div>
                 </div>
                 <div class="tile">
                     <div class="tile-header"><i class="fas fa-boxes-stacked tile-icon"></i><span class="trend-up">${format(res.STOCK)}</span></div>
                     <div class="tile-label">Current Available Pool</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 0.8rem;">${createDetails(res.STOCK_DETAILS)}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; font-size: 1.1rem;">${createDetails(res.STOCK_DETAILS)}</div>
                 </div>
                 <div class="tile">
-                    <div class="tile-header"><i class="fas fa-hand-holding-dollar tile-icon"></i><span class="trend-up">Balance</span></div>
+                    <div class="tile-header"><i class="fas fa-hand-holding-dollar tile-icon"></i><span class="trend-up" style="font-size: 1.5rem; opacity: 0.7;">Balance Tracking</span></div>
                     <div class="tile-value">₹${format(res.CASH_ON_HAND)}</div>
-                    <div class="tile-label" style="text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Net Cash On Hand</div>
+                    <div class="tile-label" style="text-transform: uppercase; font-size: 1rem; letter-spacing: 1px;">Net Cash On Hand</div>
                 </div>
             `;
         }
