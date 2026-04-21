@@ -588,29 +588,38 @@
 
                 <div class="tile-grid">
                     <!-- Production Trends -->
-                    <div class="tile" style="min-height: 350px;">
-                        <h3 style="margin-bottom:1.5rem; color:var(--primary); font-size:1.1rem;">Production Averages</h3>
-                        <div style="display: flex; gap: 20px;">
-                            <div style="flex: 2;"><canvas id="trendProdChart"></canvas></div>
-                            <div id="trendProdNumbers" class="trend-number-panel"></div>
+                    <div class="tile" style="min-height: 380px; border: 1px solid rgba(0, 245, 160, 0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem;">
+                            <i class="fas fa-microchip" style="color:#00f5a0; font-size:1.5rem;"></i>
+                            <h3 style="color:var(--primary); font-size:1.2rem; margin:0;">Production Averages</h3>
+                        </div>
+                        <div style="display: flex; gap: 20px; height: calc(100% - 3rem);">
+                            <div style="flex: 2; height:100%;"><canvas id="trendProdChart"></canvas></div>
+                            <div id="trendProdNumbers" class="trend-number-panel" style="flex: 1; columns: 2;"></div>
                         </div>
                     </div>
 
                     <!-- Sales Trends -->
-                    <div class="tile" style="min-height: 350px;">
-                        <h3 style="margin-bottom:1.5rem; color:var(--accent); font-size:1.1rem;">Sales Averages</h3>
-                        <div style="display: flex; gap: 20px;">
-                            <div style="flex: 2;"><canvas id="trendSalesChart"></canvas></div>
-                            <div id="trendSalesNumbers" class="trend-number-panel"></div>
+                    <div class="tile" style="min-height: 380px; border: 1px solid rgba(251, 140, 0, 0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem;">
+                            <i class="fas fa-chart-line" style="color:#fb8c00; font-size:1.5rem;"></i>
+                            <h3 style="color:var(--accent); font-size:1.2rem; margin:0;">Sales Averages</h3>
+                        </div>
+                        <div style="display: flex; gap: 20px; height: calc(100% - 3rem);">
+                            <div style="flex: 2; height:100%;"><canvas id="trendSalesChart"></canvas></div>
+                            <div id="trendSalesNumbers" class="trend-number-panel" style="flex: 1; columns: 2;"></div>
                         </div>
                     </div>
 
                     <!-- RM Trends -->
-                    <div class="tile" style="min-height: 450px; grid-column: 1 / -1;">
-                        <h3 style="margin-bottom:1.5rem; color:var(--accent); font-size:1.1rem;">Raw Material Consumption Trends</h3>
-                        <div style="display: flex; gap: 40px;">
-                            <div style="flex: 3;"><canvas id="trendRMChart"></canvas></div>
-                            <div id="trendRMNumbers" class="trend-number-panel" style="flex: 1; columns: 2;"></div>
+                    <div class="tile" style="min-height: 480px; grid-column: 1 / -1; border: 1px solid rgba(72, 202, 228, 0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem;">
+                            <i class="fas fa-boxes-stacked" style="color:#48cae4; font-size:1.5rem;"></i>
+                            <h3 style="color:var(--accent); font-size:1.2rem; margin:0;">Raw Material Consumption Trends</h3>
+                        </div>
+                        <div style="display: flex; gap: 40px; height: calc(100% - 3rem);">
+                            <div style="flex: 3; height:100%;"><canvas id="trendRMChart"></canvas></div>
+                            <div id="trendRMNumbers" class="trend-number-panel" style="flex: 1; columns: 2; height:100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -744,19 +753,19 @@
                 const el = document.getElementById(id);
                 if (isRM) {
                     el.innerHTML = Object.entries(data).map(([k, v]) => `
-                        <div style="margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
-                            <div style="font-size:0.75rem; opacity:0.5; color:#fff;">${k.replace(/_/g,' ')}</div>
-                            <div style="display:flex; justify-content:space-between; font-weight:700;">
-                                <span style="color:#48cae4;">R: ${v.received}</span>
-                                <span style="color:#ff595e;">U: ${v.used}</span>
+                        <div style="margin-bottom:12px; break-inside: avoid-column; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px;">
+                            <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; opacity:0.4; color:#fff;">${k.replace(/_/g,' ')}</div>
+                            <div style="display:flex; justify-content:space-between; font-weight:700; margin-top:3px;">
+                                <span style="color:#48cae4; font-size:0.9rem;">${v.received}</span>
+                                <span style="color:#ff595e; font-size:0.9rem;">${v.used}</span>
                             </div>
                         </div>
                     `).join('');
                 } else {
                     el.innerHTML = Object.entries(data).map(([k, v]) => `
-                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0; font-size:0.9rem;">
-                            <span style="opacity:0.6;">${k}</span>
-                            <span style="font-weight:700; color:var(--accent); border-radius:4px;">${v}</span>
+                        <div style="margin-bottom:12px; break-inside: avoid-column; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px;">
+                            <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; opacity:0.4; color:#fff;">${k}</div>
+                            <div style="font-weight:700; color:var(--accent); font-size:1.1rem; margin-top:3px;">${v}</div>
                         </div>
                     `).join('');
                 }
@@ -767,6 +776,10 @@
             showNums('trendRMNumbers', res.rm, true);
 
             // Production Chart
+            const prodGrad = document.getElementById('trendProdChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            prodGrad.addColorStop(0, 'rgba(0, 245, 160, 0.8)');
+            prodGrad.addColorStop(1, 'rgba(0, 245, 160, 0.1)');
+
             trendCharts.prod = new Chart(document.getElementById('trendProdChart'), {
                 type: 'bar',
                 data: {
@@ -774,15 +787,29 @@
                     datasets: [{
                         label: 'Daily Avg Production',
                         data: Object.values(res.production),
-                        backgroundColor: 'rgba(0, 245, 160, 0.6)',
+                        backgroundColor: prodGrad,
                         borderColor: '#00f5a0',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#00f5a0'
                     }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
             });
 
             // Sales Chart
+            const salesGrad = document.getElementById('trendSalesChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
+            salesGrad.addColorStop(0, 'rgba(251, 140, 0, 0.8)');
+            salesGrad.addColorStop(1, 'rgba(251, 140, 0, 0.1)');
+
             trendCharts.sales = new Chart(document.getElementById('trendSalesChart'), {
                 type: 'bar',
                 data: {
@@ -790,15 +817,34 @@
                     datasets: [{
                         label: 'Daily Avg Sales',
                         data: Object.values(res.sales),
-                        backgroundColor: 'rgba(251, 140, 0, 0.6)',
+                        backgroundColor: salesGrad,
                         borderColor: '#fb8c00',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#fb8c00'
                     }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
             });
 
             // RM Chart
+            const rmRCtx = document.getElementById('trendRMChart').getContext('2d');
+            const rmRGrad = rmRCtx.createLinearGradient(0, 0, 0, 400);
+            rmRGrad.addColorStop(0, 'rgba(72, 202, 228, 0.8)');
+            rmRGrad.addColorStop(1, 'rgba(72, 202, 228, 0.1)');
+
+            const rmUGrad = rmRCtx.createLinearGradient(0, 0, 0, 400);
+            rmUGrad.addColorStop(0, 'rgba(255, 89, 94, 0.8)');
+            rmUGrad.addColorStop(1, 'rgba(255, 89, 94, 0.1)');
+
             trendCharts.rm = new Chart(document.getElementById('trendRMChart'), {
                 type: 'bar',
                 data: {
@@ -807,20 +853,30 @@
                         {
                             label: 'Avg Received',
                             data: Object.values(res.rm).map(v => v.received),
-                            backgroundColor: 'rgba(72, 202, 228, 0.6)',
+                            backgroundColor: rmRGrad,
                             borderColor: '#48cae4',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 6
                         },
                         {
                             label: 'Avg Used',
                             data: Object.values(res.rm).map(v => v.used),
-                            backgroundColor: 'rgba(255, 89, 94, 0.6)',
+                            backgroundColor: rmUGrad,
                             borderColor: '#ff595e',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 6
                         }
                     ]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } } }
+                    },
+                    plugins: { legend: { labels: { color: 'rgba(255,255,255,0.7)', font: { weight: 'bold' } } } }
+                }
             });
         }
 
