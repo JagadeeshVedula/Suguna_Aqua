@@ -114,9 +114,23 @@ const SupabaseService = {
     },
 
     async saveSales(data) {
+        if (data.TYPE === 'LINE') {
+            const active = await this.getTodaysDispatches();
+            const existing = active.find(d => d.VEHICLE_NO === data.VEHICLE_NO);
+            
+            if (existing) {
+                const updates = {};
+                ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].forEach(k => {
+                    updates[k] = parseInt(existing[k] || 0) + parseInt(data[k] || 0);
+                });
+                const { error } = await _supabase.from('SALES').update(updates).eq('id', existing.id);
+                return { success: !error, id: existing.id, error, merged: true };
+            }
+        }
+
         data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
         const { data: resp, error } = await _supabase.from('SALES').insert([data]).select();
-        return { success: !error, id: resp ? resp[0].id : null, error };
+        return { success: !error, id: resp ? resp[0].id : null, error, merged: false };
     },
 
     async saveCashEntry(data) {
