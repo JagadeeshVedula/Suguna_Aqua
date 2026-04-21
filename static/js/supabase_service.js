@@ -80,6 +80,7 @@ const SupabaseService = {
     async endDayProcess() {
         try {
             const metrics = await this.getDashboardMetrics();
+            const rmMetrics = await this.getRawMaterialMetrics();
             const today = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
             const payload = {
                 DATE: today,
@@ -93,6 +94,14 @@ const SupabaseService = {
                 "20LTR": metrics.STOCK_DETAILS["20LTR"],
                 "BAGS": metrics.STOCK_DETAILS["BAGS"]
             };
+            
+            // Include RM Stock in Dashboard Snapshot
+            if (rmMetrics && rmMetrics.CB) {
+                Object.keys(rmMetrics.CB).forEach(k => {
+                    payload[k] = rmMetrics.CB[k];
+                });
+            }
+
             return await _supabase.from('DASHBOARD').insert([payload]);
         } catch (e) {
             console.error("END DAY ERR", e);
@@ -139,6 +148,49 @@ const SupabaseService = {
         // Driver Due = Total Bill - Trip Expenses - Cash Handed Over to Office
         payload.DUE = Math.max(0, (payload.TOTAL_AMOUNT - payload.EXPENSES) - payload.CASH_RECEIVED).toFixed(2);
         return await _supabase.from('CASH').insert([payload]);
+    },
+
+    async saveRawMaterialTx(data) {
+        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        return await _supabase.from('RAW_MATERIAL_TX').insert([data]);
+    },
+
+    async getRawMaterialMetrics() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const products = [
+                'PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML',
+                'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML',
+                'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW',
+                'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'
+            ];
+
+            const { data: dashData } = await _supabase.from('DASHBOARD').select('*').order('DATE', { ascending: false }).limit(1);
+            let metrics = { OB: {}, RECEIVED: {}, USED: {}, CB: {} };
+            
+            const snapshot = dashData && dashData[0] ? dashData[0] : {};
+            products.forEach(k => {
+                metrics.OB[k] = parseInt(snapshot[k] || 0);
+                metrics.RECEIVED[k] = 0;
+                metrics.USED[k] = 0;
+            });
+
+            const { data: txData } = await _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', today + ' 00:00:00');
+            if (txData) {
+                txData.forEach(row => {
+                    products.forEach(k => {
+                        metrics.RECEIVED[k] += parseInt(row[`${k}_R`] || 0);
+                        metrics.USED[k] += parseInt(row[`${k}_U`] || 0);
+                    });
+                });
+            }
+
+            products.forEach(k => {
+                metrics.CB[k] = metrics.OB[k] + metrics.RECEIVED[k] - metrics.USED[k];
+            });
+
+            return metrics;
+        } catch (e) { console.error("RM METRICS ERR", e); return null; }
     },
 
     async saveCustomerSales(rows) {
@@ -304,6 +356,27 @@ const SupabaseService = {
         } else if (type === "Driver Dues") {
             const { data } = await _supabase.from('CASH').select('*').order('DATE', { ascending: false });
             return (data || []).filter(row => parseFloat(row.DUE || 0) > 0);
+        } else if (type === "Raw Material") {
+            const { data } = await _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', startStr).order('DATE', { ascending: false });
+            if (!data) return [];
+
+            // data is horizontal (PB_2LTR_R, PB_2LTR_U, etc.)
+            // filter columns based on the 'filter' parameter (received, used, both)
+            const products = [
+                'PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML',
+                'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML',
+                'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW',
+                'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'
+            ];
+
+            return data.map(row => {
+                let r = { DATE: row.DATE };
+                products.forEach(p => {
+                    if (filter === 'Received' || filter === 'Both') r[`${p}_Received`] = row[`${p}_R`] || 0;
+                    if (filter === 'Used' || filter === 'Both') r[`${p}_Used`] = row[`${p}_U`] || 0;
+                });
+                return r;
+            });
         }
         return [];
     },

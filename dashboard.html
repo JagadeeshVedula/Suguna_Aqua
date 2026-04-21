@@ -38,6 +38,7 @@
             <ul class="nav-menu">
                 <li class="nav-item active" onclick="showSection('dashboard', this)">Dashboard</li>
                 <li class="nav-item" onclick="showSection('production', this)">Production</li>
+                <li class="nav-item" onclick="showSection('raw-material', this)">Raw Material</li>
                 <li class="nav-item" onclick="showSection('line', this)">Line</li>
                 <li class="nav-item" onclick="showSection('sales', this)">Sales</li>
                 <li class="nav-item" onclick="showSection('ledger', this)">Account Ledger</li>
@@ -51,8 +52,15 @@
     <main class="content">
         <!-- Dashboard Overview -->
         <section id="dashboard" class="page-section active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 2.2rem; color: var(--accent); margin: 0;">Business Intelligence</h2>
+                <select id="dashboardType" class="report-select" style="min-width: 250px;" onchange="refreshDashboard()">
+                    <option value="finished">Finished Goods Stock</option>
+                    <option value="raw">Raw Materials Stock</option>
+                </select>
+            </div>
             <div class="tile-grid" id="dashboard-tiles">
-                <!-- Tiles will be rendered via initDashboard() -->
+                <!-- Tiles will be rendered via refreshDashboard() -->
             </div>
         </section>
 
@@ -79,6 +87,76 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <!-- Raw Material Entry -->
+        <section id="raw-material" class="page-section">
+            <div class="glass-panel">
+                <h2 style="font-size: 2.2rem; margin-bottom: 2rem; color: var(--primary); text-align: center;">Raw Material Stock Entry</h2>
+                <form id="rmForm" onsubmit="handleRMEntry(event)">
+                    <div class="rm-container">
+                        <!-- Group 1: Preform Bags -->
+                        <div class="rm-group">
+                            <div class="rm-group-header">PREFORM BAGS</div>
+                            <div class="rm-grid-header">
+                                <div style="flex:1;">Item</div>
+                                <div style="width:100px; text-align:center;">Received</div>
+                                <div style="width:100px; text-align:center;">Used</div>
+                            </div>
+                            <div class="rm-row"><span>2 LTR</span><input type="number" name="PB_2LTR_R" value="0"><input type="number" name="PB_2LTR_U" value="0"></div>
+                            <div class="rm-row"><span>1 LTR</span><input type="number" name="PB_1LTR_R" value="0"><input type="number" name="PB_1LTR_U" value="0"></div>
+                            <div class="rm-row"><span>500ML</span><input type="number" name="PB_500ML_R" value="0"><input type="number" name="PB_500ML_U" value="0"></div>
+                            <div class="rm-row"><span>250ML</span><input type="number" name="PB_250ML_R" value="0"><input type="number" name="PB_250ML_U" value="0"></div>
+                        </div>
+
+                        <!-- Group 2: Label Rolls -->
+                        <div class="rm-group">
+                            <div class="rm-group-header" style="color: #48cae4;">LABEL ROLLS</div>
+                            <div class="rm-grid-header">
+                                <div style="flex:1;">Item</div>
+                                <div style="width:100px; text-align:center;">Received</div>
+                                <div style="width:100px; text-align:center;">Used</div>
+                            </div>
+                            <div class="rm-row"><span>2 LTR</span><input type="number" name="LR_2LTR_R" value="0"><input type="number" name="LR_2LTR_U" value="0"></div>
+                            <div class="rm-row"><span>1 LTR</span><input type="number" name="LR_1LTR_R" value="0"><input type="number" name="LR_1LTR_U" value="0"></div>
+                            <div class="rm-row"><span>500ML</span><input type="number" name="LR_500ML_R" value="0"><input type="number" name="LR_500ML_U" value="0"></div>
+                            <div class="rm-row"><span>250ML</span><input type="number" name="LR_250ML_R" value="0"><input type="number" name="LR_250ML_U" value="0"></div>
+                        </div>
+
+                        <!-- Group 3: Shrink Rolls -->
+                        <div class="rm-group">
+                            <div class="rm-group-header" style="color: #00f5a0;">SHRINK ROLLS</div>
+                            <div class="rm-grid-header">
+                                <div style="flex:1;">Item</div>
+                                <div style="width:100px; text-align:center;">Received</div>
+                                <div style="width:100px; text-align:center;">Used</div>
+                            </div>
+                            <div class="rm-row"><span>L.P</span><input type="number" name="SR_LP_R" value="0"><input type="number" name="SR_LP_U" value="0"></div>
+                            <div class="rm-row"><span>L.W</span><input type="number" name="SR_LW_R" value="0"><input type="number" name="SR_LW_U" value="0"></div>
+                            <div class="rm-row"><span>S.P</span><input type="number" name="SR_SP_R" value="0"><input type="number" name="SR_SP_U" value="0"></div>
+                            <div class="rm-row"><span>S.W</span><input type="number" name="SR_SW_R" value="0"><input type="number" name="SR_SW_U" value="0"></div>
+                        </div>
+
+                        <!-- Group 4: Others -->
+                        <div class="rm-group">
+                            <div class="rm-group-header" style="color: #ff9e00;">OTHERS</div>
+                            <div class="rm-grid-header">
+                                <div style="flex:1;">Item</div>
+                                <div style="width:100px; text-align:center;">Received</div>
+                                <div style="width:100px; text-align:center;">Used</div>
+                            </div>
+                            <div class="rm-row"><span>Gum Packets</span><input type="number" name="GUM_PACKETS_R" value="0"><input type="number" name="GUM_PACKETS_U" value="0"></div>
+                            <div class="rm-row"><span>Cap Boxes</span><input type="number" name="CAP_BOXES_R" value="0"><input type="number" name="CAP_BOXES_U" value="0"></div>
+                            <div class="rm-row"><span>2L Handles</span><input type="number" name="HANDLES_2LTR_R" value="0"><input type="number" name="HANDLES_2LTR_U" value="0"></div>
+                            <div class="rm-row"><span>Pouch Rolls</span><input type="number" name="POUCH_ROLLS_R" value="0"><input type="number" name="POUCH_ROLLS_U" value="0"></div>
+                            <div class="rm-row"><span>Gunnies</span><input type="number" name="GUNNIES_R" value="0"><input type="number" name="GUNNIES_U" value="0"></div>
+                            <div class="rm-row"><span>Threads</span><input type="number" name="THREADS_R" value="0"><input type="number" name="THREADS_U" value="0"></div>
+                            <div class="rm-row"><span>20L Caps</span><input type="number" name="CAPS_20LTR_R" value="0"><input type="number" name="CAPS_20LTR_U" value="0"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="save-production-btn" style="margin-top: 3rem;">Update Raw Material Daily Log</button>
+                </form>
+            </div>
         </section>
 
         <!-- Dispatch Entry -->
@@ -435,6 +513,7 @@
                             <option value="Account Ledger">Account Ledger Report</option>
                             <option value="Salary">Salary Report</option>
                             <option value="Driver Dues">Pending Driver Dues Report</option>
+                            <option value="Raw Material">Raw Material Report</option>
                             <option value="Stock">Stock Report</option>
                         </select>
                     </div>
@@ -453,6 +532,14 @@
                     <div class="control-group" id="vehicleFilterGroup" style="display: none;">
                         <label>Vehicle</label>
                         <select id="reportVehicle" class="report-select"></select>
+                    </div>
+                    <div class="control-group" id="rmFilterGroup" style="display: none;">
+                        <label>Action Type</label>
+                        <select id="reportRMAction" class="report-select">
+                            <option value="Both">Both (Show All)</option>
+                            <option value="Received">Only Received</option>
+                            <option value="Used">Only Used</option>
+                        </select>
                     </div>
                     <div class="control-group" id="timeframeFilterGroup">
                         <label>Timeframe</label>
@@ -488,8 +575,41 @@
 
         // Dashboard Rendering (Visual Fidelity)
         async function refreshDashboard() {
-            const res = await SupabaseService.getDashboardMetrics();
             const grid = document.getElementById('dashboard-tiles');
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:3rem; color:var(--accent); font-size:1.5rem;"><i class="fas fa-spinner fa-spin"></i> Analyzing Stock Patterns...</div>';
+
+            const type = document.getElementById('dashboardType').value;
+            if (type === 'raw') {
+                const res = await SupabaseService.getRawMaterialMetrics();
+                if (!res) { grid.innerHTML = "Error loading RM data."; return; }
+
+                const groups = [
+                    { name: 'Preform Bags', keys: ['PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML'], icon: 'fa-bag-shopping' },
+                    { name: 'Label Rolls', keys: ['LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML'], icon: 'fa-tags' },
+                    { name: 'Shrink Rolls', keys: ['SR_LP', 'SR_LW', 'SR_SP', 'SR_SW'], icon: 'fa-box-open' },
+                    { name: 'Misc & Others', keys: ['GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'], icon: 'fa-screwdriver-wrench' }
+                ];
+
+                grid.innerHTML = groups.map(g => `
+                    <div class="tile">
+                        <div class="tile-header"><i class="fas ${g.icon} tile-icon"></i></div>
+                        <div class="tile-label">${g.name}</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 1.5rem; font-size: 1.1rem;">
+                            ${g.keys.map(k => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;">
+                                    <span style="opacity: 0.6;">${k.replace(/_/g, ' ').replace('PB ', '').replace('LR ', '').replace('SR ', '')}</span>
+                                    <span style="font-weight: 800; color: #fff;">${res.CB[k]}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            const res = await SupabaseService.getDashboardMetrics();
+            if (!res) { grid.innerHTML = "Error loading data."; return; }
+
             const format = (n) => parseFloat(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
             const createDetails = (details) => Object.entries(details).map(([k, v]) => `
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 5px 0;">
@@ -526,12 +646,29 @@
             `;
         }
 
+        async function handleRMEntry(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = {};
+            fd.forEach((v, k) => data[k] = parseInt(v || 0));
+            const btn = e.target.querySelector('button');
+            btn.disabled = true; btn.innerText = "Saving...";
+            const res = await SupabaseService.saveRawMaterialTx(data);
+            btn.disabled = false; btn.innerText = "Update Raw Material Daily Log";
+            if (!res.error) {
+                alert("Raw Material Data Updated Successfully!");
+                e.target.reset();
+                refreshDashboard();
+            } else { alert("Error: " + res.error.message); }
+        }
+
         // Original Navigation Restoration
         function showSection(id, el) {
             document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(id).classList.add('active'); el.classList.add('active');
             if (id === 'sales') loadSettlements();
+            if (id === 'dashboard') refreshDashboard();
         }
 
         function toggleSalesSub(id, btn) {
@@ -1141,6 +1278,7 @@
             document.getElementById('dealerFilterGroup').style.display = (type === 'Dealer Sales') ? 'inline-block' : 'none';
             document.getElementById('ledgerFilterGroup').style.display = (type === 'Account Ledger') ? 'inline-block' : 'none';
             document.getElementById('vehicleFilterGroup').style.display = (type === 'Sales' || type === 'Detailed Line Sales') ? 'inline-block' : 'none';
+            document.getElementById('rmFilterGroup').style.display = (type === 'Raw Material') ? 'inline-block' : 'none';
         }
 
         async function generateReport() {
@@ -1151,6 +1289,7 @@
             if (type === 'Dealer Sales') target = document.getElementById('reportDealer').value;
             else if (type === 'Account Ledger') target = document.getElementById('reportLedgerHead').value;
             else if (type === 'Sales' || type === 'Detailed Line Sales') target = document.getElementById('reportVehicle').value;
+            else if (type === 'Raw Material') target = document.getElementById('reportRMAction').value;
 
             const tableHeader = document.getElementById('reportHeader');
             const tableBody = document.getElementById('reportContent');
