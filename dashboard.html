@@ -57,7 +57,10 @@
         <!-- Dashboard Overview -->
         <section id="dashboard" class="page-section active">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h2 style="font-size: 2.2rem; color: var(--accent); margin: 0;">Business Intelligence</h2>
+                <div style="display:flex; align-items:center; gap:20px;">
+                    <h2 style="font-size: 2.2rem; color: var(--accent); margin: 0;">Business Intelligence</h2>
+                    <button onclick="SupabaseService.endDayProcess().then(() => refreshDashboard())" class="add-mini-btn" title="Sync Current Stock as Today's Opening" style="background:#00f5a022; border:1px solid var(--accent); color:var(--accent); padding:10px 15px; border-radius:8px; cursor:pointer;"><i class="fas fa-sync"></i> SYNC OPENING</button>
+                </div>
                 <select id="dashboardType" class="report-select" style="min-width: 250px;" onchange="refreshDashboard()">
                     <option value="finished">Finished Goods Stock</option>
                     <option value="raw">Raw Materials Stock</option>
@@ -779,13 +782,15 @@
             if (id === 'trend-analysis') initTrendAnalysis();
         }
 
+        const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
         let trendCharts = {};
         async function initTrendAnalysis() {
             const endInput = document.getElementById('trendEnd');
             const startInput = document.getElementById('trendStart');
             
-            if (!endInput.value) endInput.value = new Date().toISOString().split('T')[0];
-            if (!startInput.value) startInput.value = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            if (!endInput.value) endInput.value = formatDate(new Date());
+            if (!startInput.value) startInput.value = formatDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
 
             const res = await SupabaseService.getTrendData(startInput.value, endInput.value);
             if (!res) return;
@@ -1657,6 +1662,11 @@
 
         // Global Initialization
         async function startApp() {
+            const today = formatDate(new Date());
+            document.getElementById('reportDate').value = today;
+            document.getElementById('ledgerDate').value = today;
+            fetchDealerLedger();
+
             await refreshDashboard();
             const vehs = await SupabaseService.getVehicles();
             const routes = await SupabaseService.getRoutes();

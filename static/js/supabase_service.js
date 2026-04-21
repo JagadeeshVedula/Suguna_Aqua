@@ -5,6 +5,41 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     db: { schema: 'suguna_aqua' }
 });
 
+const _getTodayDate = () => {
+    return new Date().toLocaleDateString('en-CA'); // Guaranteed YYYY-MM-DD
+};
+
+const _getNowDateTime = () => {
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+    return `${date} ${time}`;
+};
+
+const _normalizeDate = (str) => {
+    if (!str) return '1900-01-01';
+    let datePart = str.split(' ')[0];
+    const p = datePart.match(/\d+/g);
+    if (!p || p.length < 3) return datePart;
+    
+    let year, month, day;
+    if (p[0].length === 4) { // YYYY-MM-DD
+        year = p[0]; month = p[1]; day = p[2];
+    } else if (p[2].length === 4) { // DD-MM-YYYY
+        year = p[2]; month = p[1]; day = p[0];
+    } else {
+        return datePart;
+    }
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
+const _ensureISO = (str) => {
+    if (!str) return '1900-01-01 00:00:00';
+    const normDate = _normalizeDate(str);
+    const timePart = str.includes(' ') ? str.split(' ')[1] : '00:00:00';
+    return `${normDate} ${timePart}`;
+};
+
 const SupabaseService = {
     async verifyUser(username, password) {
         try {
@@ -16,75 +51,118 @@ const SupabaseService = {
 
     async getDashboardMetrics() {
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const { data: dashData } = await _supabase.from('DASHBOARD').select('*').order('DATE', { ascending: false }).order('id', { ascending: false }).limit(1);
+            const todayStr = _getTodayDate();
             
-            let metrics = { OPENING_BALANCE: 0, OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 }, CASH_SNAPSHOT: 0, SNAPSHOT_DATE: '1900-01-01 00:00:00' };
-            if (dashData && dashData.length > 0) {
-                const row = dashData[0];
-                metrics.OPENING_BALANCE = parseInt(row.OPENING_BALANCE || 0);
-                metrics.CASH_SNAPSHOT = parseFloat(row.CASH_ON_HAND || 0);
-                metrics.SNAPSHOT_DATE = row.DATE;
-                Object.keys(metrics.OPENING_DETAILS).forEach(k => { metrics.OPENING_DETAILS[k] = parseInt(row[k] || 0); });
+            // 1. Fetch recent snapshots and sort in JS
+            const { data: snaps, error: snapErr } = await _supabase.from('DASHBOARD').select('*').limit(100);
+            if (snapErr) throw snapErr;
+
+            const sortedSnaps = (snaps || []).sort((a, b) => _ensureISO(b.DATE).localeCompare(_ensureISO(a.DATE)));
+            const hasToday = sortedSnaps.some(r => _normalizeDate(r.DATE) === todayStr);
+
+            if (!hasToday) {
+                console.log("No snapshot for today found. Auto-rolling...");
+                const res = await this.endDayProcess(todayStr + " 00:00:00");
+                if (res.error) {
+                    console.error("Auto-init failed", res.error);
+                    alert("Dashboard Auto-Init Failed: " + (res.error.message || JSON.stringify(res.error)));
+                } else {
+                    // Re-fetch after successful init
+                    const { data: newSnaps } = await _supabase.from('DASHBOARD').select('*').limit(100);
+                    const finalSnaps = (newSnaps || []).sort((a, b) => _ensureISO(b.DATE).localeCompare(_ensureISO(a.DATE)));
+                    return await this._calculateMetricsFromLastSnapshot(finalSnaps);
+                }
             }
 
-            const { data: prodData } = await _supabase.from('PRODUCTION').select('*').gte('DATE', today + " 00:00:00");
-            let prodDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
-            let prodTotal = 0;
-            if (prodData) {
-                prodData.forEach(row => {
-                    Object.keys(prodDetails).forEach(k => {
-                        let val = parseInt(row[k] || 0);
-                        prodDetails[k] += val; prodTotal += val;
-                    });
-                });
-            }
-
-            const { data: lineCashData } = await _supabase.from('CASH').select('*').neq('VEHICLE_NO', 'DEALER_SALE').gte('DATE', today + ' 00:00:00');
-            const { data: dealerSalesData } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gte('DATE', today + ' 00:00:00');
-            let salesDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
-            let salesTotal = 0;
-            [...(lineCashData || []), ...(dealerSalesData || [])].forEach(row => {
-                Object.keys(salesDetails).forEach(k => {
-                    let val = parseInt(row[k] || 0);
-                    salesDetails[k] += val; salesTotal += val;
-                });
-            });
-
-            // Cumulative Cash Balance: Snapshot + Transactions after snapshot
-            const { data: newCashRecs } = await _supabase.from('CASH').select('CASH_RECEIVED').gt('DATE', metrics.SNAPSHOT_DATE);
-            let additionalCash = (newCashRecs || []).reduce((acc, row) => acc + parseFloat(row.CASH_RECEIVED || 0), 0);
-            
-            const { data: newLedgerData } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('CREDIT, DEBIT').gt('DATE', metrics.SNAPSHOT_DATE);
-            let ledgerCredit = (newLedgerData || []).reduce((acc, row) => acc + parseFloat(row.CREDIT || 0), 0);
-            let ledgerDebit = (newLedgerData || []).reduce((acc, row) => acc + parseFloat(row.DEBIT || 0), 0);
-
-            let stockDetails = {};
-            Object.keys(prodDetails).forEach(k => { stockDetails[k] = metrics.OPENING_DETAILS[k] + prodDetails[k] - salesDetails[k]; });
-
-            return {
-                OPENING_BALANCE: metrics.OPENING_BALANCE, OPENING_DETAILS: metrics.OPENING_DETAILS,
-                PRODUCTION: prodTotal, PROD_DETAILS: prodDetails,
-                SALES: salesTotal, SALES_DETAILS: salesDetails,
-                STOCK: metrics.OPENING_BALANCE + prodTotal - salesTotal, STOCK_DETAILS: stockDetails,
-                CASH_ON_HAND: metrics.CASH_SNAPSHOT + additionalCash + ledgerCredit - ledgerDebit
-            };
+            return await this._calculateMetricsFromLastSnapshot(sortedSnaps);
         } catch (e) {
             console.error("METRICS ERROR", e);
-            const v = { "250ML":0,"500ML":0,"1LTR":0,"2LTR":0,"5LTR":0,"20LTR":0,"BAGS":0 };
+            const v = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
             return { OPENING_BALANCE: 0, OPENING_DETAILS: v, PRODUCTION: 0, PROD_DETAILS: v, SALES: 0, SALES_DETAILS: v, STOCK: 0, STOCK_DETAILS: v, CASH_ON_HAND: 0 };
         }
     },
 
-    async endDayProcess() {
+    async _calculateMetricsFromLastSnapshot(preFetchedSnaps = null) {
+        let dashData = preFetchedSnaps;
+        if (!dashData) {
+            const { data: snaps } = await _supabase.from('DASHBOARD').select('*').limit(100);
+            dashData = (snaps || []).sort((a, b) => _ensureISO(b.DATE).localeCompare(_ensureISO(a.DATE)));
+        }
+        
+        let metrics = { 
+            OPENING_BALANCE: 0, 
+            OPENING_DETAILS: { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 },
+            SNAPSHOT_DATE: '1900-01-01 00:00:00'
+        };
+
+        if (dashData && dashData.length > 0) {
+            const row = dashData[0];
+            metrics.OPENING_BALANCE = parseInt(row.OPENING_BALANCE || 0);
+            metrics.SNAPSHOT_DATE = _ensureISO(row.DATE);
+            Object.keys(metrics.OPENING_DETAILS).forEach(k => { metrics.OPENING_DETAILS[k] = parseInt(row[k] || 0); });
+        }
+
+        const snapshotDate = metrics.SNAPSHOT_DATE;
+
+        // PRODUCTION since snapshot
+        const { data: prodData } = await _supabase.from('PRODUCTION').select('*').gt('DATE', snapshotDate);
+        let prodDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
+        let prodTotal = 0;
+        if (prodData) {
+            prodData.forEach(row => {
+                Object.keys(prodDetails).forEach(k => {
+                    let val = parseInt(row[k] || 0);
+                    prodDetails[k] += val; prodTotal += val;
+                });
+            });
+        }
+
+        // SALES since snapshot (Line Dispatches & Dealer Sales)
+        const { data: lineCashData } = await _supabase.from('CASH').select('*').neq('VEHICLE_NO', 'DEALER_PAYMENT').gt('DATE', snapshotDate);
+        const { data: dealerSalesData } = await _supabase.from('SALES').select('*').eq('TYPE', 'DEALER').gt('DATE', snapshotDate);
+        let salesDetails = { "250ML": 0, "500ML": 0, "1LTR": 0, "2LTR": 0, "5LTR": 0, "20LTR": 0, "BAGS": 0 };
+        let salesTotal = 0;
+        [...(lineCashData || []), ...(dealerSalesData || [])].forEach(row => {
+            Object.keys(salesDetails).forEach(k => {
+                let val = parseInt(row[k] || 0);
+                salesDetails[k] += val; salesTotal += val;
+            });
+        });
+
+        // CASH & LEDGER since snapshot (Always total accumulation as requested)
+        const { data: allCashRecs } = await _supabase.from('CASH').select('CASH_RECEIVED');
+        let totalCash = (allCashRecs || []).reduce((acc, row) => acc + parseFloat(row.CASH_RECEIVED || 0), 0);
+        
+        const { data: allLedgerData } = await _supabase.from('ACCOUNT_TRANSACTIONS').select('CREDIT, DEBIT');
+        let totalLedgerCredit = (allLedgerData || []).reduce((acc, row) => acc + parseFloat(row.CREDIT || 0), 0);
+        let totalLedgerDebit = (allLedgerData || []).reduce((acc, row) => acc + parseFloat(row.DEBIT || 0), 0);
+
+        let stockDetails = {};
+        Object.keys(prodDetails).forEach(k => { 
+            stockDetails[k] = metrics.OPENING_DETAILS[k] + prodDetails[k] - salesDetails[k]; 
+        });
+
+        return {
+            OPENING_BALANCE: metrics.OPENING_BALANCE, OPENING_DETAILS: metrics.OPENING_DETAILS,
+            PRODUCTION: prodTotal, PROD_DETAILS: prodDetails,
+            SALES: salesTotal, SALES_DETAILS: salesDetails,
+            STOCK: metrics.OPENING_BALANCE + prodTotal - salesTotal, STOCK_DETAILS: stockDetails,
+            CASH_ON_HAND: totalCash + totalLedgerCredit - totalLedgerDebit,
+            SNAPSHOT_DATE: snapshotDate
+        };
+    },
+
+    async endDayProcess(customDate = null) {
         try {
-            const metrics = await this.getDashboardMetrics();
+            // Calculate current metrics based on the last snapshot available
+            const metrics = await this._calculateMetricsFromLastSnapshot();
             const rmMetrics = await this.getRawMaterialMetrics();
-            const today = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+            
+            const timestamp = customDate || _getNowDateTime();
+            
             const payload = {
-                DATE: today,
+                DATE: timestamp,
                 OPENING_BALANCE: metrics.STOCK,
-                CASH_ON_HAND: metrics.CASH_ON_HAND,
                 "250ML": metrics.STOCK_DETAILS["250ML"],
                 "500ML": metrics.STOCK_DETAILS["500ML"],
                 "1LTR": metrics.STOCK_DETAILS["1LTR"],
@@ -94,13 +172,6 @@ const SupabaseService = {
                 "BAGS": metrics.STOCK_DETAILS["BAGS"]
             };
             
-            // Include RM Stock in Dashboard Snapshot
-            if (rmMetrics && rmMetrics.CB) {
-                Object.keys(rmMetrics.CB).forEach(k => {
-                    payload[k] = rmMetrics.CB[k];
-                });
-            }
-
             return await _supabase.from('DASHBOARD').insert([payload]);
         } catch (e) {
             console.error("END DAY ERR", e);
@@ -109,7 +180,7 @@ const SupabaseService = {
     },
 
     async saveProduction(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.DATE = _getNowDateTime();
         return await _supabase.from('PRODUCTION').insert([data]);
     },
 
@@ -128,7 +199,7 @@ const SupabaseService = {
             }
         }
 
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.DATE = _getNowDateTime();
         const { data: resp, error } = await _supabase.from('SALES').insert([data]).select();
         
         if (!error && resp && resp.length > 0) {
@@ -149,7 +220,7 @@ const SupabaseService = {
 
     async saveCashEntry(data) {
         const payload = {
-            DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' '),
+            DATE: _getNowDateTime(),
             VEHICLE_NO: data.VEHICLE_NO || data.vehicle_no,
             DRIVER: data.DRIVER || data.driver,
             TOTAL_AMOUNT: parseFloat(data.total_amount || 0),
@@ -169,21 +240,20 @@ const SupabaseService = {
     },
 
     async saveRawMaterialTx(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.DATE = _getNowDateTime();
         return await _supabase.from('RAW_MATERIAL_TX').insert([data]);
     },
 
     async saveCounterSale(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.DATE = _getNowDateTime();
         data.TYPE = 'COUNTER';
         // Map CUSTOMER_NAME to DRIVER field for consistency with existing report filters if needed
         data.DRIVER = data.CUSTOMER_NAME; 
         return await _supabase.from('SALES').insert([data]);
     },
 
-    async getRawMaterialMetrics() {
+    async getRawMaterialMetrics(dateRange = null) {
         try {
-            const today = new Date().toISOString().split('T')[0];
             const products = [
                 'PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML',
                 'LR_2LTR', 'LR_1LTR', 'LR_500ML', 'LR_250ML',
@@ -191,17 +261,33 @@ const SupabaseService = {
                 'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'
             ];
 
-            const { data: dashData } = await _supabase.from('DASHBOARD').select('*').order('DATE', { ascending: false }).limit(1);
             let metrics = { OB: {}, RECEIVED: {}, USED: {}, CB: {} };
-            
-            const snapshot = dashData && dashData[0] ? dashData[0] : {};
             products.forEach(k => {
-                metrics.OB[k] = parseInt(snapshot[k] || 0);
+                metrics.OB[k] = 0;
                 metrics.RECEIVED[k] = 0;
                 metrics.USED[k] = 0;
             });
 
-            const { data: txData } = await _supabase.from('RAW_MATERIAL_TX').select('*').gte('DATE', today + ' 00:00:00');
+            // If dateRange is provided, calculate OB from all history before start
+            if (dateRange && dateRange.start) {
+                const { data: historyBefore } = await _supabase.from('RAW_MATERIAL_TX').select('*').lt('DATE', dateRange.start);
+                if (historyBefore) {
+                    historyBefore.forEach(row => {
+                        products.forEach(k => {
+                            metrics.OB[k] += (parseInt(row[`${k}_R`] || 0) - parseInt(row[`${k}_U`] || 0));
+                        });
+                    });
+                }
+            }
+
+            // Calculate RECEIVED and USED within the range (or all if no range)
+            let q = _supabase.from('RAW_MATERIAL_TX').select('*');
+            if (dateRange) {
+                if (dateRange.start) q = q.gte('DATE', dateRange.start);
+                if (dateRange.end) q = q.lte('DATE', dateRange.end);
+            }
+
+            const { data: txData } = await q;
             if (txData) {
                 txData.forEach(row => {
                     products.forEach(k => {
@@ -270,7 +356,7 @@ const SupabaseService = {
                 CREDIT: 0,
                 DEBIT: netPaid,
                 TO_BE_PAID: 0,
-                DATE: new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ')
+                DATE: _getNowDateTime()
             };
             const { error: txError } = await _supabase.from('ACCOUNT_TRANSACTIONS').insert([salaryEntry]);
             if (txError) throw txError;
@@ -291,7 +377,7 @@ const SupabaseService = {
 
     async getTodaysDispatches() {
         const dateLimit = new Date(); dateLimit.setDate(dateLimit.getDate() - 7);
-        const dateStr = dateLimit.toISOString().split('T')[0] + ' 00:00:00';
+        const dateStr = _normalizeDate(dateLimit.toISOString()) + ' 00:00:00';
         const { data: settled } = await _supabase.from('CASH').select('SALES_ID');
         const settledIds = (settled || []).map(item => String(item.SALES_ID)).filter(id => id);
         const { data: sales } = await _supabase.from('SALES').select('*').eq('TYPE', 'LINE').gte('DATE', dateStr).order('DATE', { ascending: false });
@@ -305,7 +391,7 @@ const SupabaseService = {
     async getAccountHeads() { const { data } = await _supabase.from('ACCOUNT_HEADS').select('*').order('NAME'); return data || []; },
     async addAccountHead(name) { return await _supabase.from('ACCOUNT_HEADS').insert([{ NAME: name }]); },
     async saveAccountTransaction(data) {
-        data.DATE = new Date().toLocaleString('sv-SE').replace(' ', 'T').split('.')[0].replace('T', ' ');
+        data.DATE = _getNowDateTime();
         return await _supabase.from('ACCOUNT_TRANSACTIONS').insert([data]);
     },
 
@@ -315,8 +401,8 @@ const SupabaseService = {
         else if (timeframe === 'weekly') start.setDate(start.getDate() - 7);
         else if (timeframe === 'monthly') start.setDate(start.getDate() - 30);
         
-        let startStr = start.toISOString().split('T')[0] + " 00:00:00";
-        let endStr = new Date().toISOString().split('T')[0] + " 23:59:59";
+        let startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')} 00:00:00`;
+        let endStr = _getTodayDate() + " 23:59:59";
 
         if (customRange && customRange.start && customRange.end) {
             startStr = customRange.start + " 00:00:00";
@@ -324,7 +410,7 @@ const SupabaseService = {
         }
 
         if (type === "All Transactions") {
-            const date = specificDate || new Date().toISOString().split('T')[0];
+            const date = specificDate || _getTodayDate();
             const pattern = `${date}%`;
             
             let q1 = _supabase.from('CASH').select('DATE, VEHICLE_NO, DRIVER, TOTAL_AMOUNT, CASH_RECEIVED, DUE, EXPENSES, "250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", BAGS');
