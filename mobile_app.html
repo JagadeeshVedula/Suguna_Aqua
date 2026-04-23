@@ -40,19 +40,19 @@
     <!-- Login View -->
     <div id="login-view" class="hidden">
         <div class="login-hero">
-            <h1>Welcome.</h1>
-            <p>Sign in to your Suguna Pro account</p>
+            <h1>Sai Suguna</h1>
+            <p>Employee Login Portal</p>
         </div>
         <form id="login-form">
             <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="username" placeholder="Enter username" required>
+                <label>Employee ID</label>
+                <input type="text" id="username" placeholder="Enter ID" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+            <button type="submit" class="btn-primary" id="login-btn">Login to Dashboard</button>
         </form>
     </div>
 
@@ -118,45 +118,44 @@
                 </div>
             </div>
 
-            <!-- Dues Tab -->
-            <div id="pane-dues" class="tab-pane">
-                <div class="filter-bar">
-                    <div class="chip active" data-f="all">All Dues</div>
-                    <div class="chip" data-f="line">Line Drivers</div>
-                    <div class="chip" data-f="dealer">Dealers</div>
-                </div>
-                
-                <input type="text" class="search-input" id="due-search" placeholder="Search by name or vehicle...">
-                
-                <div id="dues-container">
-                    <!-- Dues will be rendered here -->
-                </div>
-            </div>
-
-            <!-- Trends Tab -->
-            <div id="pane-trends" class="tab-pane">
+            <!-- Update Production Tab -->
+            <div id="pane-update" class="tab-pane">
                 <div class="section-head">
-                    <h3>Weekly Performance</h3>
+                    <h3>Record New Production</h3>
                 </div>
-                <div class="data-card chart-card">
-                    <div class="label">Production Trends</div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-prod"></canvas>
+                <form id="prod-entry-form" class="data-card" style="padding: 1.5rem;">
+                    <div class="grid-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>250ML</label>
+                            <input type="number" id="p-250ML" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>500ML</label>
+                            <input type="number" id="p-500ML" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>1LTR</label>
+                            <input type="number" id="p-1LTR" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>2LTR</label>
+                            <input type="number" id="p-2LTR" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>5LTR</label>
+                            <input type="number" id="p-5LTR" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>20LTR</label>
+                            <input type="number" id="p-20LTR" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>BAGS</label>
+                            <input type="number" id="p-BAGS" placeholder="0">
+                        </div>
                     </div>
-                </div>
-                <div class="data-card chart-card">
-                    <div class="label">Sales Trends</div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-sales"></canvas>
-                    </div>
-                </div>
-                
-                <div class="section-head" style="margin-top:2rem">
-                    <h3>RM Efficiency (Daily Avg)</h3>
-                </div>
-                <div class="data-card" id="rm-trends-container">
-                    <!-- RM Usage averages -->
-                </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">Save Production</button>
+                </form>
             </div>
         </main>
 
@@ -165,13 +164,9 @@
                 <i data-lucide="layout-grid"></i>
                 <span>Home</span>
             </a>
-            <a href="#" class="nav-btn" data-t="dues">
-                <i data-lucide="credit-card"></i>
-                <span>Dues</span>
-            </a>
-            <a href="#" class="nav-btn" data-t="trends">
-                <i data-lucide="bar-chart-3"></i>
-                <span>Analytics</span>
+            <a href="#" class="nav-btn" data-t="update">
+                <i data-lucide="box"></i>
+                <span>Update Prod</span>
             </a>
         </nav>
     </div>

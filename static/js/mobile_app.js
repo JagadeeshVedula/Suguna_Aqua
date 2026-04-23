@@ -44,13 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
         navBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-t') === tabId));
         panes.forEach(p => p.classList.toggle('active', p.id === `pane-${tabId}`));
         
-        const labels = { dashboard: 'Dashboard', dues: 'Dues & Collections', trends: 'Market Trends' };
-        tabIndicator.innerText = labels[tabId];
+        const labels = { dashboard: 'Dashboard', update: 'Update Production' };
+        tabIndicator.innerText = labels[tabId] || 'Dashboard';
 
         // Data Loading
         if (tabId === 'dashboard') loadDashboard();
-        if (tabId === 'dues') loadDues();
-        if (tabId === 'trends') loadTrends();
         
         lucide.createIcons();
     }
@@ -67,6 +65,53 @@ document.addEventListener('DOMContentLoaded', () => {
         loginView.classList.add('hidden');
         appRoot.classList.remove('hidden');
         loadDashboard();
+        setupProductionForm();
+    }
+
+    function setupProductionForm() {
+        const form = document.getElementById('prod-entry-form');
+        if (!form) return;
+        
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+
+            const products = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+            const data = {};
+            let hasData = false;
+
+            products.forEach(p => {
+                const val = document.getElementById(`p-${p}`).value;
+                if (val) {
+                    data[p] = parseInt(val);
+                    hasData = true;
+                } else {
+                    data[p] = 0;
+                }
+            });
+
+            if (!hasData) {
+                alert("Please enter at least one quantity");
+                btn.innerText = 'Save Production';
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const res = await SupabaseService.saveProduction(data);
+                if (res.error) throw res.error;
+                alert("Production data saved successfully!");
+                form.reset();
+                switchTab('dashboard');
+            } catch (err) {
+                alert("Error saving data: " + err.message);
+            } finally {
+                btn.innerText = 'Save Production';
+                btn.disabled = false;
+            }
+        };
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -86,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showApp();
         } else {
             alert(res.message);
-            btn.innerText = 'Sign In';
+            btn.innerText = 'Login to Dashboard';
             btn.disabled = false;
         }
     });
@@ -129,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const prodContainer = document.getElementById('prod-container');
             prodContainer.innerHTML = '';
             prods.slice(0, 5).forEach(row => {
-                const total = (parseInt(row['1LTR']||0) + parseInt(row['500ML']||0) + parseInt(row['250ML']||0) + parseInt(row['20LTR']||0));
+                const total = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].reduce((sum, k) => sum + parseInt(row[k]||0), 0);
                 const card = document.createElement('div');
                 card.className = 'data-card list-item-row';
                 card.innerHTML = `
@@ -144,108 +189,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('refresh-rm').onclick = loadDashboard;
         } catch (e) { console.error(e); }
-    }
-
-    // --- Dues Data ---
-    async function loadDues() {
-        const container = document.getElementById('dues-container');
-        container.innerHTML = '<div class="loader"><div class="pulse-loader" style="width:40px;height:40px"></div></div>';
-        state.dues = await SupabaseService.getReportData('Dues Report');
-        renderDues();
-    }
-
-    function renderDues() {
-        const container = document.getElementById('dues-container');
-        const search = document.getElementById('due-search').value.toLowerCase();
-        const filter = document.querySelector('.chip.active').getAttribute('data-f');
-
-        let filtered = state.dues;
-        if (filter === 'line') filtered = filtered.filter(d => d.CATEGORY === 'DRIVER');
-        if (filter === 'dealer') filtered = filtered.filter(d => d.CATEGORY === 'DEALER');
-        
-        if (search) {
-            filtered = filtered.filter(d => d.NAME.toLowerCase().includes(search));
-        }
-
-        container.innerHTML = '';
-        if (filtered.length === 0) {
-            container.innerHTML = '<div class="data-card" style="text-align:center;color:var(--text-muted)">No matching records</div>';
-            return;
-        }
-
-        filtered.forEach(due => {
-            const card = document.createElement('div');
-            card.className = 'data-card list-item-row';
-            card.innerHTML = `
-                <div class="info">
-                    <div class="title">${due.NAME}</div>
-                    <div class="meta">${new Date(due.DATE).toLocaleDateString()} • ${due.CATEGORY}</div>
-                </div>
-                <div class="value-tag" style="color:var(--danger)">₹${parseFloat(due.DUE).toLocaleString()}</div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    document.querySelectorAll('.chip').forEach(c => {
-        c.onclick = () => {
-            document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
-            c.classList.add('active');
-            renderDues();
-        };
-    });
-
-    document.getElementById('due-search').oninput = renderDues;
-
-    // --- Trends Data ---
-    async function loadTrends() {
-        const end = new Date().toLocaleDateString('en-CA');
-        const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA');
-        
-        const prod = await SupabaseService.getReportData('Production', null, null, null, {start, end});
-        const sales = await SupabaseService.getReportData('All Transactions', null, null, null, {start, end});
-
-        const days = [];
-        for(let i=6; i>=0; i--) days.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA'));
-
-        const pData = days.map(d => prod.filter(r => r.DATE.startsWith(d)).reduce((s, r) => s + (parseInt(r['1LTR']||0) + parseInt(row['500ML']||0)), 0));
-        // Fixed typo in previous line (row -> r)
-        const pDataFixed = days.map(d => prod.filter(r => r.DATE.startsWith(d)).reduce((s, r) => s + (parseInt(r['1LTR']||0) + parseInt(r['500ML']||0)), 0));
-        const sData = days.map(d => sales.filter(r => r.DATE.startsWith(d) && r.TYPE === 'SALE').reduce((s, r) => s + (parseInt(r['1LTR']||0) + parseInt(r['500ML']||0)), 0));
-
-        initChart('chart-prod', days.map(d => d.split('-')[2]), pDataFixed, '#38bdf8');
-        initChart('chart-sales', days.map(d => d.split('-')[2]), sData, '#34d399');
-
-        const avg = await SupabaseService.getTrendData(start, end);
-        const rmCont = document.getElementById('rm-trends-container');
-        rmCont.innerHTML = '';
-        if (avg?.rm) {
-            ['PB_1LTR', 'PB_500ML'].forEach(k => {
-                const item = document.createElement('div');
-                item.className = 'list-item-row';
-                item.innerHTML = `<div class="info"><div class="title">${k.replace('_', ' ')}</div><div class="meta">Daily Avg Usage</div></div><div class="value-tag">${avg.rm[k].used}</div>`;
-                rmCont.appendChild(item);
-            });
-        }
-    }
-
-    function initChart(id, labels, data, color) {
-        if (state.charts[id]) state.charts[id].destroy();
-        const ctx = document.getElementById(id).getContext('2d');
-        state.charts[id] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{ data, borderColor: color, backgroundColor: color + '10', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
-                }
-            }
-        });
     }
 });

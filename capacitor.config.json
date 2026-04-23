@@ -1,6 +1,6 @@
 {
-  "appId": "com.suguna.aqua.admin",
-  "appName": "Suguna Aqua",
+  "appId": "com.suguna.aqua.employee",
+  "appName": "Suguna Employee",
   "webDir": "www",
   "bundledWebRuntime": false
 }
