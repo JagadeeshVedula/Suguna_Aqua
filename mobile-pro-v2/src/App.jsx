@@ -37,6 +37,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState(null);
+  const [rmMetrics, setRmMetrics] = useState(null);
   const [recentProd, setRecentProd] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -55,13 +56,15 @@ const App = () => {
 
     setLoading(true);
     try {
-      const [m, p] = await Promise.all([
+      const [m, p, rm] = await Promise.all([
         window.SupabaseService.getDashboardMetrics(),
-        window.SupabaseService.getReportData('Production', 'weekly')
+        window.SupabaseService.getReportData('Production', 'weekly'),
+        window.SupabaseService.getRawMaterialMetrics()
       ]);
       
       setMetrics(m);
       setRecentProd(p.slice(0, 10));
+      setRmMetrics(rm);
       setError(null);
     } catch (err) {
       console.error("Data Fetch Error:", err);
@@ -86,6 +89,21 @@ const App = () => {
     }
   };
 
+  const handleSaveRmTx = async (data) => {
+    setBusy(true);
+    try {
+        const res = await window.SupabaseService.saveRawMaterialTx(data);
+        if (res.error) throw res.error;
+        alert("Raw Material record saved successfully!");
+        setActiveTab('rm_stock');
+        fetchInitialData();
+    } catch (err) {
+        alert("Error saving data: " + err.message);
+    } finally {
+        setBusy(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('suguna_user');
     setUser(null);
@@ -97,6 +115,13 @@ const App = () => {
   if (loading && !metrics) return <Splash />;
 
   const productKeys = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"];
+  const rmKeys = [
+    'PB_2LTR', 'PB_1LTR', 'PB_500ML', 'PB_250ML', 
+    'LR_1LTR', 'LR_500ML', 'LR_250ML',
+    'SR_LP', 'SR_LW', 'SR_SP', 'SR_SW', 
+    'GUM_PACKETS', 'CAP_BOXES', 'HANDLES_2LTR', 
+    'POUCH_ROLLS', 'GUNNIES', 'THREADS', 'CAPS_20LTR'
+  ];
 
   return (
     <div className="flex flex-col h-screen bg-[#030712] text-slate-100">
@@ -104,7 +129,7 @@ const App = () => {
       <header className="safe-top bg-[#0f172a]/80 backdrop-blur-3xl border-b border-white/5 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div>
           <h1 className="text-lg font-black tracking-tight text-white uppercase">SAI SUGUNA <span className="text-primary">AQUA</span></h1>
-          <p className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">Production Portal</p>
+          <p className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">Employee Operations Portal</p>
         </div>
         <button onClick={handleLogout} className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 active:bg-primary/20 transition-all">
           <LogOut size={18} />
@@ -135,19 +160,6 @@ const App = () => {
                 />
               </div>
 
-              {/* Product-wise Breakdown */}
-              <div>
-                <SectionHeader title="Production Breakdown" />
-                <div className="bg-white/5 border border-white/10 rounded-[32px] overflow-hidden grid grid-cols-2">
-                  {productKeys.map(k => (
-                    <div key={k} className="p-5 border-b border-r border-white/5 flex justify-between items-center last:border-b-0">
-                      <span className="text-[10px] font-bold text-slate-500">{k}</span>
-                      <span className="text-sm font-black text-white">{(metrics.PROD_DETAILS?.[k] || 0).toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Recent Activity */}
               <div>
                 <SectionHeader title="Recent Batches" action={<button onClick={fetchInitialData} className="p-2"><RefreshCw size={14}/></button>} />
@@ -164,16 +176,43 @@ const App = () => {
             </motion.div>
           )}
 
+          {activeTab === 'rm_stock' && rmMetrics && (
+            <motion.div
+              key="rm_stock"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <SectionHeader title="Raw Material Inventory" action={<button onClick={fetchInitialData} className="p-2"><RefreshCw size={14}/></button>} />
+              <div className="bg-white/5 border border-white/10 rounded-[32px] overflow-hidden">
+                <div className="max-h-[600px] overflow-y-auto no-scrollbar">
+                  {rmKeys.map(k => {
+                    const val = rmMetrics.CB[k];
+                    if (val === undefined) return null;
+                    return <InventoryItem key={k} label={k.replace(/_/g, ' ')} value={val} />;
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'update' && (
             <ProductionEntryView onSave={handleSaveProduction} busy={busy} />
+          )}
+
+          {activeTab === 'update_rm' && (
+            <RmUpdateView onSave={handleSaveRmTx} busy={busy} rmKeys={rmKeys} />
           )}
         </AnimatePresence>
       </main>
 
       {/* Nav Bar */}
-      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-[#0f172a]/95 backdrop-blur-2xl rounded-[32px] border border-white/10 flex items-center justify-around px-4 z-50 shadow-2xl">
-        <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={22}/>} label="Dashboard" />
-        <NavButton active={activeTab === 'update'} onClick={() => setActiveTab('update')} icon={<Box size={22}/>} label="Update Prod" />
+      <nav className="fixed bottom-8 left-6 right-6 h-20 bg-[#0f172a]/95 backdrop-blur-2xl rounded-[32px] border border-white/10 flex items-center justify-between px-6 z-50 shadow-2xl">
+        <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={20}/>} label="Home" />
+        <NavButton active={activeTab === 'rm_stock'} onClick={() => setActiveTab('rm_stock')} icon={<Box size={20}/>} label="RM Stock" />
+        <NavButton active={activeTab === 'update'} onClick={() => setActiveTab('update')} icon={<Factory size={20}/>} label="Prod+" />
+        <NavButton active={activeTab === 'update_rm'} onClick={() => setActiveTab('update_rm')} icon={<RefreshCw size={20}/>} label="RM+" />
       </nav>
     </div>
   );
@@ -207,6 +246,16 @@ const SectionHeader = ({ title, action }) => (
   </div>
 );
 
+const InventoryItem = ({ label, value }) => (
+  <div className="flex items-center justify-between p-5 border-b border-white/5 last:border-0 active:bg-white/5">
+    <div className="flex items-center gap-4">
+      <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(56,189,248,0.5)]" />
+      <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider">{label}</span>
+    </div>
+    <span className="text-xs font-black text-white">{value.toLocaleString()}</span>
+  </div>
+);
+
 const ProductionRow = ({ data }) => {
   const total = ["250ML", "500ML", "1LTR", "2LTR", "5LTR", "20LTR", "BAGS"].reduce((sum, k) => sum + parseInt(data[k]||0), 0);
   return (
@@ -226,9 +275,9 @@ const ProductionRow = ({ data }) => {
 };
 
 const NavButton = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1.5 px-6 transition-all duration-500 ${active ? 'text-primary scale-110' : 'text-slate-500'}`}>
+  <button onClick={onClick} className={`flex flex-col items-center gap-1.5 px-3 transition-all duration-500 ${active ? 'text-primary scale-110' : 'text-slate-500'}`}>
     <div className={`transition-all duration-500 ${active ? 'translate-y-[-4px]' : ''}`}>{icon}</div>
-    <span className={`text-[8px] font-black uppercase tracking-widest transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-30'}`}>{label}</span>
+    <span className={`text-[7px] font-black uppercase tracking-widest transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-30'}`}>{label}</span>
   </button>
 );
 
@@ -288,6 +337,84 @@ const ProductionEntryView = ({ onSave, busy }) => {
       </motion.div>
     );
   };
+
+const RmUpdateView = ({ onSave, busy, rmKeys }) => {
+    const [type, setType] = useState('R'); // R for Received, U for Used
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        const init = {};
+        rmKeys.forEach(k => init[k] = "");
+        setFormData(init);
+    }, [rmKeys]);
+
+    const handleChange = (key, val) => {
+        setFormData(prev => ({ ...prev, [key]: val }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const data = {};
+        let hasData = false;
+        Object.entries(formData).forEach(([k, v]) => {
+            if (v) {
+                data[`${k}_${type}`] = parseInt(v);
+                hasData = true;
+            } else {
+                data[`${k}_${type}`] = 0;
+            }
+        });
+        if (!hasData) return alert("Please enter at least one quantity");
+        onSave(data);
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <SectionHeader title="Update Raw Materials" />
+            
+            <div className="flex gap-2 mb-6 bg-white/5 p-1.5 rounded-2xl">
+                <button 
+                    onClick={() => setType('R')} 
+                    className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'R' ? 'bg-success text-white shadow-lg' : 'text-slate-500'}`}
+                >
+                    Received (Stock In)
+                </button>
+                <button 
+                    onClick={() => setType('U')} 
+                    className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'U' ? 'bg-rose-500 text-white shadow-lg' : 'text-slate-500'}`}
+                >
+                    Used (Stock Out)
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto no-scrollbar pr-1">
+                    {rmKeys.map(k => (
+                        <div key={k} className="bg-white/5 border border-white/10 rounded-[20px] p-4 focus-within:border-primary/50 transition-colors">
+                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{k.replace(/_/g, ' ')}</label>
+                            <input 
+                                type="number" 
+                                inputMode="numeric"
+                                className="w-full bg-transparent text-xl font-black text-white outline-none placeholder:text-white/10" 
+                                placeholder="0"
+                                value={formData[k] || ""}
+                                onChange={(e) => handleChange(k, e.target.value)}
+                            />
+                        </div>
+                    ))}
+                </div>
+                <button 
+                    type="submit" 
+                    disabled={busy}
+                    className={`w-full ${type === 'R' ? 'bg-success' : 'bg-rose-500'} text-white font-black py-6 rounded-[24px] shadow-2xl active:scale-95 transition-all tracking-[0.2em] uppercase text-xs mt-4 flex items-center justify-center gap-3`}
+                >
+                    {busy ? <RefreshCw size={18} className="animate-spin" /> : <Box size={18} />}
+                    {busy ? 'Saving...' : `Save ${type === 'R' ? 'Received' : 'Used'} Data`}
+                </button>
+            </form>
+        </motion.div>
+    );
+};
 
 const LoginView = ({ onLogin }) => {
   const [username, setUsername] = useState('');
