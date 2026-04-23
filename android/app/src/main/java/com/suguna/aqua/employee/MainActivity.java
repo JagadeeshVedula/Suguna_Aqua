@@ -1,4 +1,4 @@
-package com.suguna.aqua.admin;
+package com.suguna.aqua.employee;
 
 import com.getcapacitor.BridgeActivity;
 
