@@ -655,3 +655,5 @@ const SupabaseService = {
         }
     }
 };
+
+window.SupabaseService = SupabaseService;

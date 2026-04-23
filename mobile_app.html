@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Suguna Mobile Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="static/css/mobile.css">
+    <style>
+        /* Standalone Login Page Styles */
+        #login-view {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 10% 20%, #030712 0%, #111827 100%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2.5rem;
+        }
+        .login-hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .login-hero p { color: var(--text-muted); margin-bottom: 3rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .form-group input { width: 100%; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.25rem; color: white; outline: none; }
+        .btn-primary { width: 100%; background: var(--primary); color: white; padding: 1.25rem; border-radius: 16px; font-weight: 700; border: none; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <!-- Initial Loader -->
+    <div id="app-loader" class="loading-overlay">
+        <div class="pulse-loader"></div>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" class="hidden">
+        <div class="login-hero">
+            <h1>Welcome.</h1>
+            <p>Sign in to your Suguna Pro account</p>
+        </div>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter username" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+        </form>
+    </div>
+
+    <!-- Main App Root -->
+    <div id="app-root" class="hidden">
+        <header class="app-header">
+            <div class="brand">
+                <h1>Suguna Pro</h1>
+                <span id="tab-indicator">Dashboard</span>
+            </div>
+            <div class="profile-trigger" id="logout-trigger">
+                <i data-lucide="log-out" style="width:18px;height:18px"></i>
+            </div>
+        </header>
+
+        <main class="scroll-area">
+            <!-- Dashboard Tab -->
+            <div id="pane-dashboard" class="tab-pane active">
+                <div class="metrics-row">
+                    <div class="metric-box">
+                        <div class="icon" style="background: rgba(56, 189, 248, 0.1); color: var(--primary);">
+                            <i data-lucide="factory" style="width:16px;height:16px"></i>
+                        </div>
+                        <div class="label">Production</div>
+                        <div class="value" id="val-prod">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="icon" style="background: rgba(52, 211, 153, 0.1); color: var(--success);">
+                            <i data-lucide="shopping-cart" style="width:16px;height:16px"></i>
+                        </div>
+                        <div class="label">Total Sales</div>
+                        <div class="value" id="val-sales">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="icon" style="background: rgba(251, 191, 36, 0.1); color: var(--accent);">
+                            <i data-lucide="box" style="width:16px;height:16px"></i>
+                        </div>
+                        <div class="label">Stock</div>
+                        <div class="value" id="val-stock">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="icon" style="background: rgba(248, 113, 113, 0.1); color: var(--danger);">
+                            <i data-lucide="wallet" style="width:16px;height:16px"></i>
+                        </div>
+                        <div class="label">Cash</div>
+                        <div class="value" id="val-cash">₹0</div>
+                    </div>
+                </div>
+
+                <div class="section-head">
+                    <h3>Inventory Status</h3>
+                    <div class="action" id="refresh-rm">Refresh</div>
+                </div>
+                <div class="data-card" id="rm-container">
+                    <div class="loader"><div class="pulse-loader" style="width:30px;height:30px"></div></div>
+                </div>
+
+                <div class="section-head" style="margin-top:2rem">
+                    <h3>Recent Batches</h3>
+                </div>
+                <div id="prod-container">
+                    <!-- Recent production items -->
+                </div>
+            </div>
+
+            <!-- Dues Tab -->
+            <div id="pane-dues" class="tab-pane">
+                <div class="filter-bar">
+                    <div class="chip active" data-f="all">All Dues</div>
+                    <div class="chip" data-f="line">Line Drivers</div>
+                    <div class="chip" data-f="dealer">Dealers</div>
+                </div>
+                
+                <input type="text" class="search-input" id="due-search" placeholder="Search by name or vehicle...">
+                
+                <div id="dues-container">
+                    <!-- Dues will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Trends Tab -->
+            <div id="pane-trends" class="tab-pane">
+                <div class="section-head">
+                    <h3>Weekly Performance</h3>
+                </div>
+                <div class="data-card chart-card">
+                    <div class="label">Production Trends</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-prod"></canvas>
+                    </div>
+                </div>
+                <div class="data-card chart-card">
+                    <div class="label">Sales Trends</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-sales"></canvas>
+                    </div>
+                </div>
+                
+                <div class="section-head" style="margin-top:2rem">
+                    <h3>RM Efficiency (Daily Avg)</h3>
+                </div>
+                <div class="data-card" id="rm-trends-container">
+                    <!-- RM Usage averages -->
+                </div>
+            </div>
+        </main>
+
+        <nav class="app-nav">
+            <a href="#" class="nav-btn active" data-t="dashboard">
+                <i data-lucide="layout-grid"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-btn" data-t="dues">
+                <i data-lucide="credit-card"></i>
+                <span>Dues</span>
+            </a>
+            <a href="#" class="nav-btn" data-t="trends">
+                <i data-lucide="bar-chart-3"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="static/js/supabase_service.js"></script>
+    <script src="static/js/mobile_app.js"></script>
+</body>
+</html>
